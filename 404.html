@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="id" data-tema="terang">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Halaman Tidak Ditemukan — {nama}</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#047857">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕌</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/public.css">
+</head>
+
+<body>
+<header id="navbar"></header>
+
+<main id="utama">
+  <section class="bagian">
+    <div class="wadah">
+      <div class="kaca" style="max-width:520px;margin:0 auto;padding:var(--s-2xl);text-align:center">
+        <div style="font-family:var(--judul);font-size:4rem;color:var(--primer);line-height:1">404</div>
+        <h1 style="font-size:1.5rem">Halaman Tidak Ditemukan</h1>
+        <p class="redup">Alamat yang Anda tuju mungkin sudah berubah atau salah ketik.</p>
+        <div class="baris" style="justify-content:center;gap:.6rem;flex-wrap:wrap">
+          <a class="tombol tombol-primer" href="index.html">Kembali ke Beranda</a>
+          <a class="tombol tombol-lembut" href="index.html#program">Lihat Program Donasi</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="footer"></footer>
+<div id="toast-wadah"></div>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/ui.js"></script>
+<script>UI.mulaiHalaman('').catch(function () {});</script>
+</body>
+</html>

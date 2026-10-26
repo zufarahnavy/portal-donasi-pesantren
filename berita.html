@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id" data-tema="terang">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Berita &amp; Laporan — {nama}</title>
+<meta name="description" content="Arsip warta pesantren, laporan penyaluran donasi, prestasi santri, dan progres pembangunan.">
+<meta name="theme-color" content="#047857">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕌</text></svg>">
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/public.css">
+</head>
+
+<body>
+<a class="lewati" href="#utama">Lewati ke konten utama</a>
+
+<header id="navbar"></header>
+
+<main id="utama">
+
+  <div class="wadah">
+    <nav class="remah" id="remah" aria-label="Jejak navigasi"></nav>
+  </div>
+
+  <section class="bagian" style="padding-top:var(--s-lg)">
+    <div class="wadah">
+      <div class="judul-bagian" id="kepala-berita"></div>
+
+      <div class="berita-kisi">
+        <div class="lajur" style="gap:var(--s-lg);min-width:0">
+          <div class="baris-sela" style="gap:var(--s-md)">
+            <div class="cari-kotak tumbuh" style="min-width:240px">
+              <input type="search" id="cari" placeholder="Cari judul, penulis, atau kategori…" aria-label="Cari berita">
+            </div>
+            <label class="baris kecil" style="gap:6px">
+              <span class="redup">Urutkan</span>
+              <select id="urut" style="width:auto">
+                <option value="terbaru">Terbitan terbaru</option>
+                <option value="terlama">Terbitan terlama</option>
+                <option value="populer">Paling banyak dibaca</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="tab-pil" id="kategori" role="tablist" aria-label="Kategori berita"></div>
+
+          <div id="unggulan"></div>
+          <div id="daftar" class="kisi kisi-2" style="gap:var(--s-lg)"></div>
+          <div id="paginasi" class="paginasi"></div>
+        </div>
+
+        <aside class="sidebar" id="sidebar"></aside>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer id="footer"></footer>
+<div id="toast-wadah"></div>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/sidebar.js"></script>
+<script src="assets/js/berita.js"></script>
+</body>
+</html>

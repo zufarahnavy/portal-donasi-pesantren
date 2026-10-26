@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="id" data-tema="terang">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tunaikan Donasi — {nama}</title>
+<meta name="description" content="Isi formulir singkat, bayar lewat QRIS atau transfer, lalu konfirmasi via WhatsApp. Donasi tercatat otomatis.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#047857">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕌</text></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/public.css">
+</head>
+
+<body>
+<a class="lewati" href="#utama">Lewati ke konten utama</a>
+
+<header id="navbar"></header>
+
+<main id="utama">
+  <div class="wadah">
+    <nav class="remah" id="remah" aria-label="Jejak navigasi"></nav>
+  </div>
+
+  <section class="bagian" style="padding-top:var(--s-lg)">
+    <div class="wadah">
+      <div class="detail-kisi" style="grid-template-columns:minmax(0,1fr)">
+        <div id="donasi-isi">
+          <div class="rangka" style="height:40px;width:60%;margin-bottom:20px"></div>
+          <div class="rangka" style="height:260px;border-radius:1.5rem"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="footer"></footer>
+<div id="toast-wadah"></div>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/donasi.js"></script>
+</body>
+</html>

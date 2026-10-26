@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id" data-tema="terang">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{nama} — Portal Donasi & Informasi Pesantren</title>
+<meta name="description" content="Portal resmi pesantren untuk profil, program wakaf dan beasiswa santri, laporan penyaluran, serta donasi yang tercatat transparan.">
+<meta name="theme-color" content="#047857">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕌</text></svg>">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Portal Donasi & Informasi Pesantren">
+<meta property="og:description" content="Salurkan wakaf dan sedekah terbaik Anda. Setiap rupiah dicatat dan dilaporkan.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/public.css">
+</head>
+
+<body>
+<a class="lewati" href="#utama">Lewati ke konten utama</a>
+
+<header id="navbar"></header>
+
+<main id="utama">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="wadah">
+      <div class="hero-kisi" id="hero">
+        <div class="lajur">
+          <div class="rangka" style="height:28px;width:280px;border-radius:999px;margin-bottom:24px"></div>
+          <div class="rangka" style="height:56px;margin-bottom:12px"></div>
+          <div class="rangka" style="height:56px;width:70%;margin-bottom:24px"></div>
+          <div class="rangka rangka-baris"></div>
+          <div class="rangka rangka-baris" style="width:80%"></div>
+        </div>
+        <div class="rangka" style="aspect-ratio:4/5;max-height:480px;border-radius:2rem"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Statistik transparansi -->
+  <section class="bagian bagian-alt" id="bagian-statistik">
+    <div class="wadah">
+      <div class="judul-bagian judul-tengah" id="judul-statistik"></div>
+      <div class="kisi kisi-4" id="statistik"></div>
+    </div>
+  </section>
+
+  <!-- Profil & pilar -->
+  <section class="bagian" id="pilar">
+    <div class="wadah">
+      <div class="judul-bagian" id="judul-pilar"></div>
+      <div class="kisi kisi-3" id="pilar-daftar"></div>
+    </div>
+  </section>
+
+  <!-- Program donasi -->
+  <section class="bagian bagian-alt" id="program">
+    <div class="wadah">
+      <div class="baris-sela" style="align-items:flex-end;margin-bottom:var(--s-xl)">
+        <div class="judul-bagian" style="margin:0" id="judul-program"></div>
+        <div class="tab-pil" id="tab-kategori" role="tablist" aria-label="Kategori program"></div>
+      </div>
+      <div class="kisi kisi-3" id="program-daftar"></div>
+    </div>
+  </section>
+
+  <!-- Berita -->
+  <section class="bagian" id="berita">
+    <div class="wadah">
+      <div class="baris-sela" style="align-items:flex-end;margin-bottom:var(--s-xl)">
+        <div class="judul-bagian" style="margin:0" id="judul-berita"></div>
+        <a class="baris" href="berita.html" style="font-weight:600;font-size:.875rem">
+          <span>Lihat semua berita &amp; arsip</span>
+        </a>
+      </div>
+      <div class="kisi kisi-3" id="berita-daftar"></div>
+    </div>
+  </section>
+
+  <!-- Untaian doa -->
+  <section class="bagian bagian-alt" id="doa">
+    <div class="wadah">
+      <div class="judul-bagian judul-tengah" id="judul-doa"></div>
+      <div class="kisi kisi-3" id="doa-daftar"></div>
+    </div>
+  </section>
+
+  <!-- Kontak & peta -->
+  <section class="bagian" id="kontak">
+    <div class="wadah">
+      <div class="kontak-kisi" id="kontak-isi"></div>
+    </div>
+  </section>
+
+  <!-- Ajakan donasi rutin -->
+  <section class="cta" id="cta"></section>
+
+</main>
+
+<footer id="footer"></footer>
+<div id="toast-wadah"></div>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/public.js"></script>
+</body>
+</html>
