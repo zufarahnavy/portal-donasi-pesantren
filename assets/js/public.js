@@ -74,12 +74,25 @@
     var t2 = k.tombol_kedua || { teks: 'Jelajahi Profil', tautan: '#pilar' };
     var metrik = Array.isArray(k.metrik) ? k.metrik : [];
     var kg = k.kartu_gambar || {};
-    var la = k.lencana_atas || {};
     var lb = k.lencana_bawah || {};
+
+    // Lencana di atas judul dan kartu mengambang diambil dari daftar legalitas
+    // yang diatur Superadmin. Teks di Section hanya dipakai bila belum ada
+    // baris legalitas yang ditandai untuk disorot.
+    var sorotBadge = UI.legalitasSorot(cfgGlobal, 'badge');
+    var sorotKartu = UI.legalitasSorot(cfgGlobal, 'kartu');
+    var teksBadge = sorotBadge
+      ? (sorotBadge.judul + (sorotBadge.nomor ? ' — ' + sorotBadge.nomor : ''))
+      : k.badge;
+    var la = sorotKartu
+      ? { judul: sorotKartu.judul, sub: sorotKartu.nomor, ikon: sorotKartu.ikon }
+      : (k.lencana_atas || {});
 
     el.innerHTML =
       '<div class="lajur">' +
-        (k.badge ? '<span class="hero-badge">' + UI.ikon('perisai', 'ikon-sm') + UI.aman(k.badge) + '</span>' : '') +
+        (teksBadge ? '<span class="hero-badge">' +
+          UI.ikon(sorotBadge ? sorotBadge.ikon : 'perisai', 'ikon-sm') +
+          UI.aman(teksBadge) + '</span>' : '') +
         '<h1>' + UI.aman(sec.judul || '') + '</h1>' +
         '<p class="hero-sub">' + UI.aman(k.paragraf || sec.subjudul || '') + '</p>' +
         '<div class="hero-aksi">' +
@@ -101,7 +114,8 @@
           '</div>' : '') +
         '</div>' +
         (la.judul ? '<div class="hero-apung hero-apung-atas">' +
-          '<span class="ikon-wadah ikon-wadah-emas" style="width:36px;height:36px">' + UI.ikon('bintang', 'ikon-sm') + '</span>' +
+          '<span class="ikon-wadah ikon-wadah-emas" style="width:36px;height:36px">' +
+            UI.ikon(la.ikon || 'bintang', 'ikon-sm') + '</span>' +
           '<span class="lajur"><b style="font-size:.8125rem">' + UI.aman(la.judul) + '</b>' +
           '<span class="mini redup">' + UI.aman(la.sub || '') + '</span></span></div>' : '') +
         (lb.judul ? '<div class="hero-apung hero-apung-bawah">' +

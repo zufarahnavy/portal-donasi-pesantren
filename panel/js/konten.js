@@ -204,13 +204,20 @@
   var kontenData = {};
   var tabAktif = 'statistik';
 
+  var NAMA_IKON = {
+    perisai: 'Perisai — SK & pengesahan', gedung: 'Gedung — lembaga negara',
+    masjid: 'Masjid — izin pesantren', kuitansi: 'Kuitansi — rekening & keuangan',
+    bintang: 'Bintang — akreditasi', berkas: 'Berkas — dokumen umum',
+    wisuda: 'Wisuda — pendidikan', kitab: 'Kitab — kurikulum', dunia: 'Dunia — keanggotaan'
+  };
+
   P.P.modul.konten = function (wadah) {
     return P.panggil('kontenList', {}).then(function (d) {
       kontenData = d;
       wadah.innerHTML =
         '<div class="panel-kartu">' +
           '<div class="tab-pil" id="k-tab" role="tablist">' +
-            ['statistik', 'agenda', 'audit', 'testimoni'].map(function (t) {
+            ['statistik', 'legalitas', 'agenda', 'audit', 'testimoni'].map(function (t) {
               return '<button type="button" role="tab" data-tab="' + t + '" aria-selected="' +
                 (t === tabAktif) + '">' + label(t) + '</button>';
             }).join('') +
@@ -241,8 +248,9 @@
   };
 
   function label(t) {
-    return { statistik: 'Statistik Beranda', agenda: 'Agenda Pesantren',
-             audit: 'Audit Realisasi', testimoni: 'Testimoni' }[t];
+    return { statistik: 'Statistik Beranda', legalitas: 'Legalitas & Perizinan',
+             agenda: 'Agenda Pesantren', audit: 'Audit Realisasi',
+             testimoni: 'Testimoni' }[t];
   }
 
   function gambarTab() {
@@ -250,6 +258,7 @@
     var data = kontenData[tabAktif] || [];
     var kepala = {
       statistik: ['Label', 'Nilai', 'Sumber', 'Tampil'],
+      legalitas: ['Dokumen', 'Nomor', 'Disorot di beranda', 'Tampil'],
       agenda:    ['Kegiatan', 'Tanggal', 'Lokasi', 'Tampil'],
       audit:     ['Pos alokasi', 'Persen', 'Nominal', 'Tampil'],
       testimoni: ['Nama', 'Isi', 'Sumber', 'Tampil']
@@ -271,6 +280,9 @@
   function penjelasan(t) {
     return {
       statistik: 'Angka yang tampil di bawah hero beranda. Yang bertanda otomatis dihitung sistem.',
+      legalitas: 'Daftar SK, izin operasional, registrasi, dan akreditasi lembaga. ' +
+        'Tambahkan sebanyak yang Anda punya — yang tampil di kaki halaman dan di beranda ' +
+        'mengikuti daftar ini, bukan kolom tetap.',
       agenda: 'Jadwal yang tampil di panel samping halaman berita.',
       audit: 'Proporsi penyaluran dana yang digambar sebagai donat di halaman berita.',
       testimoni: 'Untaian doa dan kesan donatur yang ditampilkan di beranda.'
@@ -279,7 +291,12 @@
 
   function barisKonten(t, r) {
     var sel;
-    if (t === 'statistik') {
+    if (t === 'legalitas') {
+      sel = '<td><b>' + P.aman(r.judul) + '</b>' +
+              (r.keterangan ? '<br><span class="mini redup">' + P.aman(r.keterangan) + '</span>' : '') + '</td>' +
+            '<td class="kecil mono">' + P.aman(r.nomor || '—') + '</td>' +
+            '<td class="kecil">' + sorotLabel(r.sorot) + '</td>';
+    } else if (t === 'statistik') {
       sel = '<td><b>' + P.aman(r.label) + '</b></td>' +
             '<td class="angka">' + P.aman(r.nilai) + ' ' + P.aman(r.satuan || '') + '</td>' +
             '<td class="kecil">' + (r.otomatis ? P.lencana('Otomatis', 'emas') + ' ' +
@@ -312,14 +329,43 @@
       '</td></tr>';
   }
 
-  var RUTE_KONTEN = { statistik: 'statistikSimpan', agenda: 'agendaSimpan',
-                      audit: 'auditSimpan', testimoni: 'testimoniSimpan' };
+  var RUTE_KONTEN = { statistik: 'statistikSimpan', legalitas: 'legalitasSimpan',
+                      agenda: 'agendaSimpan', audit: 'auditSimpan',
+                      testimoni: 'testimoniSimpan' };
+
+  var SOROT_LABEL = {
+    '': 'Hanya kaki halaman',
+    badge: 'Lencana di atas judul beranda',
+    kartu: 'Kartu mengambang di hero'
+  };
+  function sorotLabel(v) {
+    var s = SOROT_LABEL[String(v || '')] || SOROT_LABEL[''];
+    return String(v || '') ? P.lencana(s, 'emas') : '<span class="redup">' + s + '</span>';
+  }
 
   function suntingKonten(t, id) {
     var r = (kontenData[t] || []).filter(function (x) { return x.id === id; })[0] || {};
     var isi;
 
-    if (t === 'statistik') {
+    if (t === 'legalitas') {
+      isi = P.bidang({ nama: 'judul', label: 'Nama dokumen', nilai: r.judul, wajib: true,
+                       petunjuk: 'Izin Operasional Pondok Pesantren' }) +
+            P.bidang({ nama: 'nomor', label: 'Nomor / keterangan singkat', nilai: r.nomor,
+                       petunjuk: 'Kemenag RI No. Kd.10.02/5/PP.00.7/1184/2019' }) +
+            P.bidang({ nama: 'keterangan', label: 'Penjelasan tambahan', nilai: r.keterangan,
+                       bantu: 'Satu baris kecil di bawah nomor. Boleh dikosongkan.' }) +
+            P.bidang({ tipe: 'pilihan', nama: 'ikon', label: 'Ikon', nilai: r.ikon || 'perisai',
+                       opsi: (kontenData.ikon_legalitas || ['perisai']).map(function (i) {
+                         return { nilai: i, label: NAMA_IKON[i] || i };
+                       }) }) +
+            P.bidang({ tipe: 'pilihan', nama: 'sorot', label: 'Disorot di beranda',
+                       nilai: r.sorot || '',
+                       opsi: [{ nilai: '', label: 'Tidak — cukup di kaki halaman' },
+                              { nilai: 'badge', label: 'Lencana di atas judul beranda' },
+                              { nilai: 'kartu', label: 'Kartu mengambang di sisi gambar hero' }],
+                       bantu: 'Hanya satu dokumen untuk tiap posisi. Bila dua dokumen ' +
+                              'memilih posisi yang sama, yang urutannya lebih kecil yang dipakai.' });
+    } else if (t === 'statistik') {
       isi = P.bidang({ nama: 'label', label: 'Label', nilai: r.label, wajib: true }) +
             P.bidang({ nama: 'nilai', label: 'Nilai', nilai: r.nilai,
                        bantu: 'Abaikan bila memakai sumber otomatis.' }) +

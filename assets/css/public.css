@@ -401,11 +401,15 @@
   padding: 0.65rem 0.8rem;
   border-radius: var(--r-md);
   background: rgba(255, 255, 255, .06);
-  display: flex; gap: var(--s-sm); align-items: center;
+  border-left: 2px solid rgba(217, 180, 91, .5);
+  display: flex; gap: var(--s-sm); align-items: flex-start;
   margin-bottom: var(--s-sm);
 }
-.footer-legal b { color: #fff; font-size: 0.8125rem; display: block; }
-.footer-legal span { font-size: 0.6875rem; }
+.footer-legal .ikon { color: var(--emas-terang); margin-top: 2px; }
+.footer-legal > div { min-width: 0; }
+.footer-legal b { color: #fff; font-size: 0.8125rem; display: block; line-height: 1.35; }
+.footer-legal span { display: block; font-size: 0.75rem; line-height: 1.45; }
+.footer-legal span + span { color: #7F8C87; font-size: 0.6875rem; margin-top: 1px; }
 .footer-sosial { display: flex; gap: var(--s-sm); margin-top: var(--s-sm); }
 .footer-sosial a {
   width: 36px; height: 36px; border-radius: var(--r-pil);

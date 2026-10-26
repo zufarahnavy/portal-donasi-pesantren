@@ -6,6 +6,25 @@
 (function () {
   'use strict';
 
+  /**
+   * Label legalitas yang dipakai sebagai tanda "terverifikasi" di halaman
+   * program. Diambil dari baris legalitas yang Superadmin tandai untuk
+   * disorot; pemasangan lama yang belum punya daftar itu tetap memakai
+   * pengaturan legalitas_bwi.
+   */
+  function sorotLegal() {
+    try { return UI.legalitasSorot(cfg, 'badge'); } catch (e) { return null; }
+  }
+  function labelNazhir() {
+    var l = sorotLegal();
+    if (l) return l.judul + (l.nomor ? ' — ' + l.nomor : '');
+    return cfg.legalitas_bwi || '';
+  }
+  function ikonNazhir() {
+    var l = sorotLegal();
+    return (l && l.ikon) || 'perisai';
+  }
+
   var D = document;
   var $ = function (id) { return D.getElementById(id); };
   var slug = UI.paramUrl('slug') || UI.paramUrl('id');
@@ -42,7 +61,8 @@
       '<div class="lajur" style="gap:var(--s-md);margin-bottom:var(--s-xl)">' +
         '<div class="baris" style="flex-wrap:wrap;gap:.5rem">' +
           '<span class="lencana lencana-emas">' + UI.aman(LABEL_KATEGORI[p.kategori] || p.kategori) + '</span>' +
-          (cfg.legalitas_bwi ? '<span class="lencana">' + UI.ikon('perisai', 'ikon-sm') + 'Terverifikasi ' + UI.aman(cfg.legalitas_bwi) + '</span>' : '') +
+          (labelNazhir() ? '<span class="lencana">' + UI.ikon(ikonNazhir(), 'ikon-sm') +
+            'Terverifikasi ' + UI.aman(labelNazhir()) + '</span>' : '') +
           (p.sisa_hari ? '<span class="lencana lencana-netral">' + UI.ikon('jam', 'ikon-sm') + p.sisa_hari + ' hari tersisa</span>' : '') +
         '</div>' +
         '<h1 style="font-size:clamp(1.75rem,4vw,2.75rem)">' + UI.aman(p.judul) + '</h1>' +
@@ -216,7 +236,8 @@
       '<hr class="pemisah">' +
       '<div class="jaminan">' +
         '<div>' + UI.ikon('centang', 'ikon-sm') + '<span><b>100% tanpa potongan admin.</b> Seluruh nominal masuk ke pos program ini.</span></div>' +
-        (cfg.legalitas_bwi ? '<div>' + UI.ikon('perisai', 'ikon-sm') + '<span><b>Nazhir terdaftar resmi.</b> ' + UI.aman(cfg.legalitas_bwi) + '</span></div>' : '') +
+        (labelNazhir() ? '<div>' + UI.ikon(ikonNazhir(), 'ikon-sm') +
+          '<span><b>Lembaga terdaftar resmi.</b> ' + UI.aman(labelNazhir()) + '</span></div>' : '') +
         '<div>' + UI.ikon('kuitansi', 'ikon-sm') + '<span><b>Kuitansi digital.</b> Terbit otomatis lengkap dengan kode QR pemeriksaan keaslian.</span></div>' +
       '</div>' +
     '</div>';

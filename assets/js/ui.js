@@ -346,13 +346,47 @@
     global.addEventListener('scroll', saatGulir, { passive: true });
   }
 
+  var IKON_BADGE_LAMA = {
+    account_balance: 'gedung', credit_card: 'kuitansi', verified: 'perisai',
+    school: 'wisuda', mosque: 'masjid', star: 'bintang'
+  };
+
+  /**
+   * Daftar legalitas yang siap digambar.
+   * Bentuk barunya datang dari sheet Legalitas; bila belum ada, bentuk lama
+   * (pengaturan badge_json) dipetakan ke bentuk yang sama supaya tampilan
+   * tidak pernah mendadak kosong setelah pembaruan.
+   */
+  function daftarLegalitas(cfg) {
+    if (Array.isArray(cfg.legalitas) && cfg.legalitas.length) return cfg.legalitas;
+
+    var lama = Array.isArray(cfg.badge_json) ? cfg.badge_json : [];
+    return lama.map(function (b) {
+      return {
+        judul: b.judul || '',
+        nomor: b.nilai || b.nomor || '',
+        keterangan: '',
+        ikon: IKON_BADGE_LAMA[String(b.ikon)] || 'perisai',
+        sorot: ''
+      };
+    });
+  }
+
+  /** Baris legalitas yang ditandai untuk disorot di beranda. */
+  function legalitasSorot(cfg, jenis) {
+    var cocok = daftarLegalitas(cfg).filter(function (b) { return b.sorot === jenis; });
+    return cocok.length ? cocok[0] : null;
+  }
+
   function rakitFooter(cfg, section) {
     var el = D.getElementById('footer');
     if (!el) return;
 
     var nama = cfg.nama_pesantren || 'Portal Donasi';
     var sosial = Array.isArray(cfg.sosial_json) ? cfg.sosial_json : [];
-    var badge = Array.isArray(cfg.badge_json) ? cfg.badge_json : [];
+    // Daftar legalitas diatur Superadmin lewat panel. Pemasangan lama yang
+    // belum punya sheet Legalitas tetap terlayani oleh badge_json.
+    var legal = daftarLegalitas(cfg);
     var tautanCepat = (section && section.footer && section.footer.konten && section.footer.konten.tautan) || [];
 
     el.className = 'footer';
@@ -391,13 +425,16 @@
             (cfg.jam_layanan ? '<div class="baris">' + ikon('jam', 'ikon-sm') + '<span>' + aman(cfg.jam_layanan) + '</span></div>' : '') +
           '</div></div>' +
 
-          '<div><h3>Legalitas & Keamanan</h3>' +
-            '<p>Terdaftar dan diawasi secara resmi oleh otoritas syariah dan perizinan nasional.</p>' +
-            badge.map(function (b) {
-              return '<div class="footer-legal">' + ikon(b.ikon === 'account_balance' ? 'gedung' : b.ikon === 'credit_card' ? 'kuitansi' : 'perisai', 'ikon-sm') +
-                '<div><b>' + aman(b.judul) + '</b><span>' + aman(b.nilai) + '</span></div></div>';
+          (legal.length ? '<div><h3>Legalitas &amp; Perizinan</h3>' +
+            '<p>' + aman(cfg.legalitas_catatan ||
+              'Dokumen resmi yang menaungi penyelenggaraan dan penerimaan donasi.') + '</p>' +
+            legal.map(function (b) {
+              return '<div class="footer-legal">' + ikon(b.ikon, 'ikon-sm') +
+                '<div><b>' + aman(b.judul) + '</b><span>' + aman(b.nomor) + '</span>' +
+                (b.keterangan ? '<span>' + aman(b.keterangan) + '</span>' : '') +
+                '</div></div>';
             }).join('') +
-          '</div>' +
+          '</div>' : '') +
 
         '</div>' +
         '<div class="footer-bawah">' +
@@ -483,6 +520,7 @@
     ungkap: ungkap, kurangGerak: function () { return KURANG_GERAK; },
     mulaiTema: mulaiTema, gantiTema: gantiTema,
     rakitNavbar: rakitNavbar, rakitFooter: rakitFooter,
+    daftarLegalitas: daftarLegalitas, legalitasSorot: legalitasSorot,
     tampilkanGalat: tampilkanGalat, mulaiHalaman: mulaiHalaman
   };
 })(window);
