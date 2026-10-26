@@ -46,6 +46,10 @@
     gambarDoa(data.testimoni || []);
     gambarKontak(s.kontak);
     gambarCta(s.cta);
+
+    // Kartu di dalam tiap bagian diungkap bertahap setelah isinya ada.
+    UI.ungkap('#pilar-daftar > *, #berita-daftar > *, #doa-daftar > *', true);
+    UI.ungkap('.bagian');
   }
 
   function gambarJudul(id, sec) {
@@ -215,6 +219,13 @@
     }
 
     el.innerHTML = daftar.map(kartuProgram).join('');
+
+    // Kartu baru masuk berurutan supaya mata mengikuti perubahan daftar,
+    // bukan tiba-tiba menemukan isi yang sudah berganti.
+    el.classList.remove('masuk-halus');
+    void el.offsetWidth;                       // paksa ulang animasi
+    el.classList.add('masuk-halus');
+
     el.querySelectorAll('.progres > i').forEach(function (bar) {
       requestAnimationFrame(function () { bar.style.width = bar.getAttribute('data-lebar') + '%'; });
     });

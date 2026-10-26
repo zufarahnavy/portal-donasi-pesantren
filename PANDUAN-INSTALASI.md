@@ -116,16 +116,34 @@ Urutannya penting. Beri nama persis seperti ini:
 
 ### A4. Jalankan penyiapan
 
-1. Di bagian atas editor, pada kotak dropdown fungsi, pilih
+> 📌 **Yang membingungkan di Apps Script:** kotak dropdown fungsi di bagian atas
+> editor hanya menampilkan fungsi dari **berkas yang sedang terbuka**, bukan dari
+> seluruh proyek. Jadi sebelum memilih sebuah fungsi, klik dulu berkasnya di
+> daftar sebelah kiri. Peta lengkapnya:
+>
+> | Buka berkas ini dulu | Fungsi yang bisa dijalankan |
+> |---|---|
+> | `01_Setup` | `setupAppEnvironment` · `pasangTrigger` · `hapusSemuaTrigger` |
+> | `12_Trigger` | `cekKesiapan` · `prosesAntreanNotif` · `tugasHarian` · `hitungUlangProgram` |
+> | `04_Auth` | `resetAksesDarurat` · `buatHashSandi` · `rotasiSecretSesi` |
+> | `02_Migrasi` | `migrasiJalankan` |
+> | `10_DocEngine` | `ujiKuitansi` |
+>
+> Kalau dropdown tetap kosong setelah berkasnya dibuka: berkas belum disimpan
+> (Ctrl+S), atau ada berkas lain yang isinya belum lengkap tertempel sehingga
+> seluruh proyek gagal diurai — tandanya garis merah di tepi kiri berkas itu.
+
+1. Klik berkas **`01_Setup`** di daftar berkas sebelah kiri.
+2. Di bagian atas editor, pada kotak dropdown fungsi, pilih
    **`setupAppEnvironment`**.
-2. Klik **Run / Jalankan**.
-3. Google akan meminta izin: **Review permissions** → pilih akun Anda →
+3. Klik **Run / Jalankan**.
+4. Google akan meminta izin: **Review permissions** → pilih akun Anda →
    muncul layar "Google hasn't verified this app".
 
    Ini normal. Aplikasi ini milik Anda sendiri dan tidak didaftarkan ke Google.
    Klik **Advanced** → **Go to Portal Donasi Pesantren (unsafe)** → **Allow**.
 
-4. Tunggu sampai muncul tulisan "Execution completed", lalu buka panel
+5. Tunggu sampai muncul tulisan "Execution completed", lalu buka panel
    **Execution log** di bawah.
 
 Yang akan Anda lihat di log:
@@ -161,7 +179,8 @@ dan tidak mengganti sandi yang sudah ada.
 
 ### A6. Pasang pemicu terjadwal
 
-1. Kembali ke **Editor**, pilih fungsi **`pasangTrigger`**, klik **Run**.
+1. Kembali ke **Editor**, buka berkas **`01_Setup`**, pilih fungsi
+   **`pasangTrigger`**, klik **Run**.
 2. Log akan menampilkan `✅ Pemicu terpasang`.
 
 Dua pemicu akan hidup:
@@ -175,7 +194,8 @@ Dua pemicu akan hidup:
 
 ### A7. Periksa kesiapan
 
-Pilih fungsi **`cekKesiapan`** → **Run** → buka log.
+Buka berkas **`12_Trigger`** di daftar sebelah kiri — fungsi ini ada di sana,
+bukan di `01_Setup`. Lalu pilih fungsi **`cekKesiapan`** → **Run** → buka log.
 
 Kalau muncul `✅ Semua siap`, lanjut ke Tahap B. Kalau masih ada daftar
 nomor, kerjakan satu per satu — kalimatnya sudah menyebutkan apa yang kurang.
@@ -547,6 +567,8 @@ Setelah itu, menu **CRM Kontak** dan **Blast WhatsApp** siap dipakai.
 | "Konfigurasi belum lengkap" di situs | `GAS_URL` belum diisi | Ulangi Tahap C, lalu `git add . && git commit -m "isi url" && git push` |
 | Halaman 404 dari GitHub Pages | `index.html` tidak ada di root repositori | Buka repo di browser. Kalau yang terlihat folder, bukan `index.html`, lihat "Salah folder" di bawah |
 | Situs tampil polos tanpa warna | Folder `assets/` tidak ikut terunggah | Pastikan unggah lewat terminal, bukan "Upload files" di web GitHub |
+| Nama fungsi tidak ada di dropdown Apps Script | Dropdown hanya memuat fungsi dari berkas yang sedang terbuka | Klik dulu berkasnya di daftar kiri (lihat tabel di Tahap A4), baru pilih fungsinya |
+| Dropdown fungsi kosong sama sekali | Berkas belum disimpan, atau ada berkas yang gagal diurai | Tekan Ctrl+S; cari garis merah di tepi kiri berkas, biasanya ada isi yang belum lengkap tertempel |
 | `fatal: not a git repository` | Belum `git init`, atau salah folder | Jalankan `dir`, pastikan `index.html` terlihat |
 | `remote origin already exists` | Sudah pernah disambungkan | Lewati, langsung `git push -u origin main` |
 | `Password authentication is not supported` | GitHub menolak sandi akun | Buat Personal Access Token (D7) |

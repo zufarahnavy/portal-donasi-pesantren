@@ -44,6 +44,10 @@
     bintang: '<path d="M11.5 3.2a.6.6 0 0 1 1 0l2.3 4.7 5.2.8c.5.1.7.7.3 1l-3.7 3.7.9 5.1a.6.6 0 0 1-.9.6L12 16.7l-4.6 2.4a.6.6 0 0 1-.9-.6l.9-5.1-3.7-3.7a.6.6 0 0 1 .3-1l5.2-.8z"/>',
     pustaka: '<path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/>',
     cari: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+    mata: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+    mataTutup: '<path d="M10.7 6.2A9.8 9.8 0 0 1 12 6c6.4 0 10 6 10 6a18 18 0 0 1-2.7 3.4"/>' +
+               '<path d="M6.6 6.6A18 18 0 0 0 2 12s3.6 6 10 6a9.7 9.7 0 0 0 4-.8"/>' +
+               '<path d="m2 2 20 20"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
     info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
     ingat: '<path d="m21.7 18-8-14a2 2 0 0 0-3.5 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
     bagikan: '<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="m16 6-4-4-4 4"/><path d="M12 2v13"/>',
@@ -199,6 +203,65 @@
       if (p < 1) requestAnimationFrame(langkah);
     }
     requestAnimationFrame(langkah);
+  }
+
+  /**
+   * Ungkap sekali saat sebuah bagian pertama kali terlihat.
+   *
+   * Gerakannya sengaja pendek dan hanya sekali per elemen: tujuannya memberi
+   * tahu mata bahwa ada bagian baru yang masuk, bukan menghibur. Pengguna yang
+   * meminta "kurangi gerakan" di sistem operasinya langsung melihat halaman
+   * dalam keadaan final tanpa animasi sama sekali.
+   */
+  var KURANG_GERAK = false;
+  try {
+    KURANG_GERAK = !!(global.matchMedia &&
+      global.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  } catch (e) { /* peramban lama — anggap gerakan boleh */ }
+
+  var pengamatUngkap = null;
+
+  function siapkanUngkap() {
+    if (KURANG_GERAK || !global.IntersectionObserver) {
+      Array.prototype.forEach.call(D.querySelectorAll('.ungkap'), function (el) {
+        el.classList.add('ungkap-tampil');
+      });
+      return;
+    }
+
+    if (!pengamatUngkap) {
+      pengamatUngkap = new IntersectionObserver(function (entri) {
+        entri.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          e.target.classList.add('ungkap-tampil');
+          // Sebagian polyfill IntersectionObserver tidak punya unobserve.
+          if (pengamatUngkap.unobserve) pengamatUngkap.unobserve(e.target);
+        });
+      // threshold 0, bukan 0.12: sebuah bagian yang lebih tinggi daripada
+      // layar tidak akan pernah mencapai rasio 12%, dan isinya akan tetap
+      // tak terlihat selamanya. Dengan 0, cukup tepinya yang masuk.
+      }, { threshold: 0, rootMargin: '0px 0px -8% 0px' });
+    }
+
+    Array.prototype.forEach.call(D.querySelectorAll('.ungkap:not(.ungkap-tampil)'), function (el) {
+      pengamatUngkap.observe(el);
+    });
+  }
+
+  /** Tandai sekumpulan elemen untuk diungkap, lalu mulai mengamatinya. */
+  function ungkap(pemilih, dariIndeks) {
+    var daftar = typeof pemilih === 'string'
+      ? Array.prototype.slice.call(D.querySelectorAll(pemilih))
+      : [].concat(pemilih || []);
+
+    daftar.forEach(function (el, i) {
+      if (!el || el.classList.contains('ungkap')) return;
+      el.classList.add('ungkap');
+      var tunda = ((dariIndeks ? i : 0) % 3) + 1;
+      if (dariIndeks) el.classList.add('ungkap-tunda-' + tunda);
+    });
+
+    siapkanUngkap();
   }
 
   function amatiSekali(el, saatTampil) {
@@ -403,6 +466,8 @@
           if (ic) ic.href = cfg.favicon_url;
         }
         if (!sudah) { sudah = true; selesai(cfg); }
+        // Bagian statis (hero, judul bagian) diungkap begitu kerangka siap.
+        setTimeout(function () { ungkap('.bagian, .hero-visual'); }, 30);
       }, { umur: 3600 }).catch(function (e) {
         if (!sudah) gagal(e);
       });
@@ -415,6 +480,7 @@
     tanggal: tanggal, waktu: waktu, inisial: inisial, paramUrl: paramUrl,
     gambar: gambar, toast: toast, salin: salin,
     hitungNaik: hitungNaik, amatiSekali: amatiSekali,
+    ungkap: ungkap, kurangGerak: function () { return KURANG_GERAK; },
     mulaiTema: mulaiTema, gantiTema: gantiTema,
     rakitNavbar: rakitNavbar, rakitFooter: rakitFooter,
     tampilkanGalat: tampilkanGalat, mulaiHalaman: mulaiHalaman

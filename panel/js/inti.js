@@ -576,7 +576,7 @@
     el('tombol-situs').innerHTML = UI.ikon('dunia', 'ikon-sm');
     el('sisi-buka').innerHTML = UI.ikon('menu', 'ikon-sm');
     el('sisi-tutup').innerHTML = UI.ikon('tutup', 'ikon-sm');
-    el('m-lihat').innerHTML = UI.ikon('cari', 'ikon-sm');
+    el('m-lihat').innerHTML = UI.ikon('mata', 'ikon-sm');
 
     el('tombol-tema').addEventListener('click', function () { UI.gantiTema(); });
     el('tombol-segar').addEventListener('click', function () {
@@ -611,8 +611,11 @@
     // --- layar masuk
     el('m-lihat').addEventListener('click', function () {
       var i = el('m-sandi');
-      i.type = i.type === 'password' ? 'text' : 'password';
-      this.setAttribute('aria-label', i.type === 'password' ? 'Tampilkan kata sandi' : 'Sembunyikan kata sandi');
+      var tampil = i.type === 'password';
+      i.type = tampil ? 'text' : 'password';
+      this.innerHTML = UI.ikon(tampil ? 'mataTutup' : 'mata', 'ikon-sm');
+      this.setAttribute('aria-label', tampil ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi');
+      this.setAttribute('aria-pressed', String(tampil));
       i.focus();
     });
 
