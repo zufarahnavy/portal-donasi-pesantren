@@ -647,21 +647,35 @@
             'blast hanya terkirim saat ada yang membuka panel.</div>'
           : '') +
 
-        (d.skema.perlu_migrasi
-          ? '<div class="panel-kartu" style="border-color:var(--ingat)">' +
-            '<div class="kartu-kepala"><h2>Struktur Database Perlu Disesuaikan</h2></div>' +
-            '<p class="kecil">Migrasi hanya <b>menambah</b> sheet atau kolom yang hilang. ' +
-              'Data lama tidak dihapus, tidak dipindah, dan tidak ditimpa.</p>' +
-            (d.skema.sheet_hilang.length ? '<p class="kecil">Sheet hilang: <span class="mono">' +
-              d.skema.sheet_hilang.map(P.aman).join(', ') + '</span></p>' : '') +
-            (Object.keys(d.skema.kolom_hilang).length
-              ? '<div class="kode-blok">' + Object.keys(d.skema.kolom_hilang).map(function (s) {
-                  return s + ': ' + d.skema.kolom_hilang[s].join(', ');
-                }).join('\n') + '</div>' : '') +
-            '<button type="button" class="tombol tombol-primer" id="s-migrasi" ' +
-              'style="margin-top:var(--s-md)">Jalankan migrasi</button>' +
-          '</div>'
-          : '') +
+        // Tombol migrasi SELALU ada, bukan hanya saat struktur berubah.
+        // Versi skema bisa saja sudah cocok sementara perapian datanya belum
+        // pernah berjalan — dan dulu, dalam keadaan itu, tombolnya menghilang
+        // dan pengelola kehabisan cara untuk menjalankannya dari panel.
+        '<div class="panel-kartu"' +
+          (d.skema.perlu_migrasi ? ' style="border-color:var(--ingat)"' : '') + '>' +
+          '<div class="kartu-kepala"><h2>' +
+            (d.skema.perlu_migrasi ? 'Struktur Database Perlu Disesuaikan' : 'Perawatan Struktur &amp; Data') +
+          '</h2></div>' +
+          '<p class="kecil">' + (d.skema.perlu_migrasi
+            ? 'Ada sheet atau kolom yang belum sesuai dengan versi kode ini.'
+            : 'Struktur sudah sesuai. Menjalankannya sekarang hanya merapikan data: ' +
+              'memindahkan pengaturan yang sudah digantikan menu baru dan menanam contoh ' +
+              'yang belum ada.') +
+            ' Migrasi hanya <b>menambah</b> — data lama tidak dihapus, tidak dipindah, ' +
+            'dan tidak ditimpa. Aman dijalankan berulang kali.</p>' +
+          (d.skema.sheet_hilang.length ? '<p class="kecil">Sheet hilang: <span class="mono">' +
+            d.skema.sheet_hilang.map(P.aman).join(', ') + '</span></p>' : '') +
+          (Object.keys(d.skema.kolom_hilang).length
+            ? '<div class="kode-blok">' + Object.keys(d.skema.kolom_hilang).map(function (s) {
+                return s + ': ' + d.skema.kolom_hilang[s].join(', ');
+              }).join('\n') + '</div>' : '') +
+          '<button type="button" class="tombol ' +
+            (d.skema.perlu_migrasi ? 'tombol-primer' : 'tombol-lembut') + '" id="s-migrasi" ' +
+            'style="margin-top:var(--s-md)">' +
+            (d.skema.perlu_migrasi ? 'Jalankan migrasi' : 'Periksa &amp; rapikan sekarang') +
+          '</button>' +
+          '<div id="s-migrasi-hasil"></div>' +
+        '</div>' +
 
         '<div class="panel-kartu">' +
           '<div class="kartu-kepala"><h2>Isi Database</h2></div>' +
@@ -705,14 +719,28 @@
   };
 
   function migrasi(tombol) {
-    P.konfirmasi('Jalankan migrasi skema?',
-      'Sheet dan kolom yang hilang akan ditambahkan. Tidak ada data yang dihapus atau ditimpa.',
+    P.konfirmasi('Jalankan perawatan struktur & data?',
+      'Sheet dan kolom yang hilang ditambahkan, pengaturan yang sudah digantikan menu baru ' +
+      'dipindahkan, dan contoh yang belum ada ditanam. Tidak ada data Anda yang dihapus ' +
+      'atau ditimpa, dan aman dijalankan berulang kali.',
       'Jalankan').then(function (ya) {
       if (!ya) return;
       P.sibuk(tombol, true, 'Menyesuaikan…');
       P.panggil('migrasiJalankan', {}).then(function (h) {
-        P.toast(h.tindakan.length + ' perubahan struktur diterapkan.', 'sukses');
-        P.buka('sistem', true);
+        var wadah = P.el('s-migrasi-hasil');
+        if (wadah) {
+          wadah.innerHTML = '<div class="pesan pesan-sukses" style="margin-top:var(--s-md)">' +
+            (h.tindakan.length
+              ? '<div><b>' + P.angka(h.tindakan.length) + ' perubahan diterapkan:</b><br>' +
+                h.tindakan.map(P.aman).join('<br>') + '</div>'
+              : '<span>Struktur dan data sudah rapi — tidak ada yang perlu diubah.</span>') +
+            '</div>';
+        }
+        P.toast(h.tindakan.length
+          ? h.tindakan.length + ' perubahan diterapkan.'
+          : 'Sudah rapi, tidak ada yang diubah.', 'sukses');
+        P.sibuk(tombol, false);
+        API.bersihkanCache && API.bersihkanCache();
       }).catch(function (e) { P.galat(e); P.sibuk(tombol, false); });
     });
   }
