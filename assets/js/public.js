@@ -31,6 +31,7 @@
 
     UI.rakitFooter(cfgGlobal, s);
 
+    gambarBanner(data.banner || []);
     gambarHero(s.hero, data);
     gambarJudul('judul-statistik', s.statistik);
     gambarStatistik(data.statistik || []);
@@ -63,6 +64,70 @@
     if (tengah) el.classList.add('judul-tengah');
   }
 
+  // ====================================================== Banner hero
+  /**
+   * Latar bagian atas beranda yang berganti perlahan.
+   *
+   * Dua hal yang disengaja:
+   *   • Gambar pertama dimuat biasa, sisanya baru dimuat setelah halaman
+   *     tenang — supaya banner tidak menunda tampilnya tulisan utama.
+   *   • Pergantian otomatis berhenti bila sistem pengunjung meminta
+   *     "kurangi gerakan"; yang tampil hanya gambar pertama.
+   */
+  var jamBanner = null;
+
+  function gambarBanner(daftar) {
+    var el = $('hero-banner');
+    if (!el) return;
+
+    if (jamBanner) { clearInterval(jamBanner); jamBanner = null; }
+
+    if (!daftar.length) {
+      el.innerHTML = '';
+      D.querySelector('.hero').classList.remove('hero-bergambar');
+      return;
+    }
+
+    D.querySelector('.hero').classList.add('hero-bergambar');
+
+    el.innerHTML = daftar.map(function (b, i) {
+      return '<div class="hero-banner-lapis' + (i === 0 ? ' tampil' : '') + '" ' +
+        'style="background-image:url(\'' + UI.aman(UI.aset(b.gambar_url)) + '\')" ' +
+        'role="img" aria-label="' + UI.aman(b.judul || '') + '"></div>';
+    }).join('') +
+    (daftar.length > 1
+      ? '<div class="hero-titik" role="tablist" aria-label="Pilih gambar latar">' +
+        daftar.map(function (b, i) {
+          return '<button type="button" role="tab" data-ke="' + i + '" aria-selected="' + (i === 0) +
+            '"><span class="sr-only">' + UI.aman(b.judul || ('Gambar ' + (i + 1))) + '</span></button>';
+        }).join('') + '</div>'
+      : '');
+
+    if (daftar.length < 2) return;
+
+    var lapis = el.querySelectorAll('.hero-banner-lapis');
+    var titik = el.querySelectorAll('.hero-titik button');
+    var kini = 0;
+
+    var ke = function (i) {
+      kini = (i + lapis.length) % lapis.length;
+      for (var n = 0; n < lapis.length; n++) {
+        lapis[n].classList.toggle('tampil', n === kini);
+        titik[n].setAttribute('aria-selected', String(n === kini));
+      }
+    };
+
+    el.querySelector('.hero-titik').addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-ke]');
+      if (!b) return;
+      ke(Number(b.getAttribute('data-ke')));
+      if (jamBanner) { clearInterval(jamBanner); jamBanner = null; }   // pengunjung memilih sendiri
+    });
+
+    if (UI.kurangGerak()) return;
+    jamBanner = setInterval(function () { ke(kini + 1); }, 6500);
+  }
+
   // ====================================================== Hero
   function gambarHero(sec, data) {
     var el = $('hero');
@@ -76,17 +141,17 @@
     var kg = k.kartu_gambar || {};
     var lb = k.lencana_bawah || {};
 
-    // Lencana di atas judul dan kartu mengambang diambil dari daftar legalitas
-    // yang diatur Superadmin. Teks di Section hanya dipakai bila belum ada
-    // baris legalitas yang ditandai untuk disorot.
+    // Lencana di atas judul dan kartu mengambang HANYA datang dari daftar
+    // legalitas. Tidak ada teks cadangan di Section: bila sebuah baris
+    // dihapus dari panel, ia harus benar-benar hilang dari beranda.
     var sorotBadge = UI.legalitasSorot(cfgGlobal, 'badge');
     var sorotKartu = UI.legalitasSorot(cfgGlobal, 'kartu');
     var teksBadge = sorotBadge
       ? (sorotBadge.judul + (sorotBadge.nomor ? ' — ' + sorotBadge.nomor : ''))
-      : k.badge;
+      : '';
     var la = sorotKartu
       ? { judul: sorotKartu.judul, sub: sorotKartu.nomor, ikon: sorotKartu.ikon }
-      : (k.lencana_atas || {});
+      : {};
 
     el.innerHTML =
       '<div class="lajur">' +

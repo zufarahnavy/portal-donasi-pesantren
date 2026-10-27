@@ -783,3 +783,91 @@
   .artikel-program .tombol { margin-left: 0; width: 100%; justify-content: center; }
   .artikel-bagikan > span:first-child { flex-basis: 100%; margin-bottom: 0.25rem; }
 }
+
+/* ============================================================================
+   BANNER HERO — latar bergambar yang berganti perlahan
+   ----------------------------------------------------------------------------
+   Gambar ada di belakang tulisan, jadi keterbacaan harus dijamin oleh lapisan
+   peneduh, bukan oleh harapan bahwa fotonya kebetulan gelap di bagian kiri.
+   ============================================================================ */
+
+.hero-banner { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
+
+.hero-banner-lapis {
+  position: absolute; inset: 0;
+  background-size: cover;
+  background-position: center 38%;
+  opacity: 0;
+  transform: scale(1.04);
+  transition: opacity 1.4s var(--gerak), transform 9s linear;
+}
+.hero-banner-lapis.tampil { opacity: 1; transform: scale(1); }
+
+/* Peneduh: pekat di kiri tempat tulisan berada, menipis ke kanan tempat
+   kartu gambar berdiri, lalu menyatu dengan warna kanvas di kaki hero. */
+.hero-bergambar .hero-banner::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(100deg, rgba(5, 35, 28, .94) 0%, rgba(5, 35, 28, .82) 38%, rgba(5, 35, 28, .5) 72%, rgba(5, 35, 28, .42) 100%),
+    linear-gradient(to bottom, rgba(5, 35, 28, .5), transparent 22%, transparent 72%, var(--canvas) 100%);
+}
+:root[data-tema="gelap"] .hero-bergambar .hero-banner::after {
+  background:
+    linear-gradient(100deg, rgba(4, 18, 15, .95) 0%, rgba(4, 18, 15, .88) 40%, rgba(4, 18, 15, .62) 100%),
+    linear-gradient(to bottom, rgba(4, 18, 15, .6), transparent 24%, transparent 70%, var(--canvas) 100%);
+}
+
+/* Tulisan hero menjadi terang begitu ada gambar di belakangnya. */
+.hero-bergambar { padding-top: var(--s-2xl); }
+.hero-bergambar::before { display: none; }              /* pola girih tidak perlu di atas foto */
+.hero-bergambar h1 { color: #FFFDF8; }
+.hero-bergambar .hero-sub { color: rgba(255, 253, 248, .86); }
+.hero-bergambar .hero-badge {
+  background: rgba(255, 255, 255, .13);
+  border-color: rgba(255, 255, 255, .28);
+  color: #FFFDF8;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: none;
+}
+.hero-bergambar .hero-badge .ikon { color: var(--emas-terang); }
+.hero-bergambar .hero-metrik > div { border-left-color: rgba(255, 255, 255, .22); }
+.hero-bergambar .hero-metrik b { color: var(--emas-terang); }
+.hero-bergambar .hero-metrik span { color: rgba(255, 253, 248, .74); }
+.hero-bergambar .tombol-lembut {
+  background: rgba(255, 255, 255, .12);
+  border-color: rgba(255, 255, 255, .32);
+  color: #FFFDF8;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.hero-bergambar .tombol-lembut:hover { background: rgba(255, 255, 255, .22); }
+
+/* Titik pemilih gambar */
+.hero-titik {
+  position: absolute; left: 50%; bottom: 1.1rem;
+  transform: translateX(-50%);
+  display: flex; gap: 8px; z-index: 2;
+}
+.hero-titik button {
+  width: 34px; height: 5px; padding: 0;
+  border: 0; border-radius: var(--r-pil);
+  background: rgba(255, 255, 255, .34);
+  cursor: pointer;
+  transition: background .3s ease, width .3s var(--gerak);
+}
+.hero-titik button:hover { background: rgba(255, 255, 255, .6); }
+.hero-titik button[aria-selected="true"] { background: var(--emas-terang); width: 52px; }
+
+@media (max-width: 1023px) {
+  .hero-bergambar .hero-banner::after {
+    background:
+      linear-gradient(to bottom, rgba(5, 35, 28, .88) 0%, rgba(5, 35, 28, .8) 55%, var(--canvas) 100%);
+  }
+  .hero-titik { bottom: .6rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-banner-lapis { transition: none; transform: none; }
+}

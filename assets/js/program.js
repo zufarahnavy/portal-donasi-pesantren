@@ -8,17 +8,15 @@
 
   /**
    * Label legalitas yang dipakai sebagai tanda "terverifikasi" di halaman
-   * program. Diambil dari baris legalitas yang Superadmin tandai untuk
-   * disorot; pemasangan lama yang belum punya daftar itu tetap memakai
-   * pengaturan legalitas_bwi.
+   * program, diambil dari baris legalitas yang ditandai "lencana" di panel.
+   * Bila tidak ada yang ditandai, tanda itu memang tidak ditampilkan.
    */
   function sorotLegal() {
     try { return UI.legalitasSorot(cfg, 'badge'); } catch (e) { return null; }
   }
   function labelNazhir() {
     var l = sorotLegal();
-    if (l) return l.judul + (l.nomor ? ' — ' + l.nomor : '');
-    return cfg.legalitas_bwi || '';
+    return l ? l.judul + (l.nomor ? ' — ' + l.nomor : '') : '';
   }
   function ikonNazhir() {
     var l = sorotLegal();

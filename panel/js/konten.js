@@ -217,7 +217,7 @@
       wadah.innerHTML =
         '<div class="panel-kartu">' +
           '<div class="tab-pil" id="k-tab" role="tablist">' +
-            ['statistik', 'legalitas', 'agenda', 'audit', 'testimoni'].map(function (t) {
+            ['statistik', 'banner', 'legalitas', 'agenda', 'audit', 'testimoni'].map(function (t) {
               return '<button type="button" role="tab" data-tab="' + t + '" aria-selected="' +
                 (t === tabAktif) + '">' + label(t) + '</button>';
             }).join('') +
@@ -248,7 +248,8 @@
   };
 
   function label(t) {
-    return { statistik: 'Statistik Beranda', legalitas: 'Legalitas & Perizinan',
+    return { statistik: 'Statistik Beranda', banner: 'Banner Beranda',
+             legalitas: 'Legalitas & Perizinan',
              agenda: 'Agenda Pesantren', audit: 'Audit Realisasi',
              testimoni: 'Testimoni' }[t];
   }
@@ -259,6 +260,7 @@
     var kepala = {
       statistik: ['Label', 'Nilai', 'Sumber', 'Tampil'],
       legalitas: ['Dokumen', 'Nomor', 'Disorot di beranda', 'Tampil'],
+      banner: ['Gambar', 'Judul', 'Urutan', 'Tampil'],
       agenda:    ['Kegiatan', 'Tanggal', 'Lokasi', 'Tampil'],
       audit:     ['Pos alokasi', 'Persen', 'Nominal', 'Tampil'],
       testimoni: ['Nama', 'Isi', 'Sumber', 'Tampil']
@@ -280,6 +282,9 @@
   function penjelasan(t) {
     return {
       statistik: 'Angka yang tampil di bawah hero beranda. Yang bertanda otomatis dihitung sistem.',
+      banner: 'Gambar latar yang berganti perlahan di bagian atas beranda. ' +
+        'Bentuk lanskap lebar (sekitar 2:1) paling cocok; bagian kiri akan tertutup ' +
+        'lapisan gelap supaya judul tetap terbaca.',
       legalitas: 'Daftar SK, izin operasional, registrasi, dan akreditasi lembaga. ' +
         'Tambahkan sebanyak yang Anda punya — yang tampil di kaki halaman dan di beranda ' +
         'mengikuti daftar ini, bukan kolom tetap.',
@@ -291,7 +296,16 @@
 
   function barisKonten(t, r) {
     var sel;
-    if (t === 'legalitas') {
+    if (t === 'banner') {
+      sel = '<td style="width:150px">' +
+              (r.gambar_url
+                ? '<img src="' + P.aman(UI.aset(r.gambar_url)) + '" alt="" ' +
+                  'style="width:132px;aspect-ratio:2/1;object-fit:cover;border-radius:var(--r-sm);display:block">'
+                : '<span class="mini redup">belum ada gambar</span>') + '</td>' +
+            '<td><b>' + P.aman(r.judul) + '</b>' +
+              (r.keterangan ? '<br><span class="mini redup">' + P.aman(r.keterangan) + '</span>' : '') + '</td>' +
+            '<td class="angka">' + r.urutan + '</td>';
+    } else if (t === 'legalitas') {
       sel = '<td><b>' + P.aman(r.judul) + '</b>' +
               (r.keterangan ? '<br><span class="mini redup">' + P.aman(r.keterangan) + '</span>' : '') + '</td>' +
             '<td class="kecil mono">' + P.aman(r.nomor || '—') + '</td>' +
@@ -329,7 +343,8 @@
       '</td></tr>';
   }
 
-  var RUTE_KONTEN = { statistik: 'statistikSimpan', legalitas: 'legalitasSimpan',
+  var RUTE_KONTEN = { statistik: 'statistikSimpan', banner: 'bannerSimpan',
+                      legalitas: 'legalitasSimpan',
                       agenda: 'agendaSimpan', audit: 'auditSimpan',
                       testimoni: 'testimoniSimpan' };
 
@@ -347,7 +362,16 @@
     var r = (kontenData[t] || []).filter(function (x) { return x.id === id; })[0] || {};
     var isi;
 
-    if (t === 'legalitas') {
+    if (t === 'banner') {
+      isi = P.bidang({ nama: 'judul', label: 'Judul gambar', nilai: r.judul, wajib: true,
+                       petunjuk: 'Masjid pesantren menjelang Subuh',
+                       bantu: 'Dipakai sebagai teks alternatif bagi pembaca layar.' }) +
+            P.bidang({ nama: 'keterangan', label: 'Keterangan', nilai: r.keterangan,
+                       bantu: 'Catatan internal. Tidak ditampilkan di situs.' }) +
+            P.bidang({ nama: 'gambar_url', label: 'Alamat gambar', nilai: r.gambar_url, wajib: true,
+                       bantu: 'Unggah gambar lewat Identitas & Pengaturan, lalu tempel alamatnya di sini. ' +
+                              'Ukuran yang nyaman: lebar sekitar 1800 px, perbandingan 2:1.' });
+    } else if (t === 'legalitas') {
       isi = P.bidang({ nama: 'judul', label: 'Nama dokumen', nilai: r.judul, wajib: true,
                        petunjuk: 'Izin Operasional Pondok Pesantren' }) +
             P.bidang({ nama: 'nomor', label: 'Nomor / keterangan singkat', nilai: r.nomor,

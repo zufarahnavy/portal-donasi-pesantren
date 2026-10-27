@@ -412,7 +412,7 @@
     { grup: 'Konten Situs', sa: true, butir: [
       { kunci: 'beranda',  label: 'Bagian Beranda', ikon: 'pustaka' },
       { kunci: 'berita',   label: 'Berita',         ikon: 'kitab' },
-      { kunci: 'konten',   label: 'Statistik, Agenda & Audit', ikon: 'bintang' },
+      { kunci: 'konten',   label: 'Elemen Beranda',  ikon: 'bintang' },
       { kunci: 'formulir', label: 'Formulir Donasi', ikon: 'kode' },
       { kunci: 'dokumen',  label: 'Dokumen Publik',  ikon: 'berkas' }
     ] },

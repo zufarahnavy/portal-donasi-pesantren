@@ -276,9 +276,31 @@
 
   // ====================================================== Gambar
   /** Alamat gambar yang aman dipakai; kosong → kotak penampung. */
+  /**
+   * Akar situs, dihitung sekali dari alamat halaman.
+   *
+   * Gambar contoh disimpan dengan jalur relatif seperti
+   * `assets/img/contoh/x.webp`. Dari beranda jalur itu benar, tetapi dari
+   * dalam /panel/ ia akan menunjuk ke /panel/assets/… dan gambarnya hilang.
+   * Karena itu jalur relatif selalu dilekatkan ke akar situs lebih dulu.
+   */
+  var AKAR = (function () {
+    try {
+      var jalur = global.location.pathname.replace(/[^/]*$/, '');
+      return /\/panel\/$/.test(jalur) ? jalur.replace(/panel\/$/, '') : jalur;
+    } catch (e) { return ''; }
+  })();
+
+  function aset(url) {
+    var u = String(url || '');
+    if (!u) return '';
+    if (/^(https?:|data:|blob:|\/\/|\/)/i.test(u)) return u;
+    return AKAR + u.replace(/^\.?\//, '');
+  }
+
   function gambar(url, alt, kelas) {
     if (!url) return '<div class="rangka" style="width:100%;height:100%"></div>';
-    return '<img src="' + aman(url) + '" alt="' + aman(alt || '') + '" loading="lazy" class="' + (kelas || '') + '"' +
+    return '<img src="' + aman(aset(url)) + '" alt="' + aman(alt || '') + '" loading="lazy" class="' + (kelas || '') + '"' +
            ' onerror="this.style.display=\'none\'">';
   }
 
@@ -346,30 +368,15 @@
     global.addEventListener('scroll', saatGulir, { passive: true });
   }
 
-  var IKON_BADGE_LAMA = {
-    account_balance: 'gedung', credit_card: 'kuitansi', verified: 'perisai',
-    school: 'wisuda', mosque: 'masjid', star: 'bintang'
-  };
-
   /**
    * Daftar legalitas yang siap digambar.
-   * Bentuk barunya datang dari sheet Legalitas; bila belum ada, bentuk lama
-   * (pengaturan badge_json) dipetakan ke bentuk yang sama supaya tampilan
-   * tidak pernah mendadak kosong setelah pembaruan.
+   *
+   * SATU sumber saja: sheet Legalitas yang diatur Superadmin. Sengaja tanpa
+   * jalur cadangan ke pengaturan lama — cadangan itulah yang dulu membuat
+   * baris yang sudah dihapus masih muncul di beranda.
    */
   function daftarLegalitas(cfg) {
-    if (Array.isArray(cfg.legalitas) && cfg.legalitas.length) return cfg.legalitas;
-
-    var lama = Array.isArray(cfg.badge_json) ? cfg.badge_json : [];
-    return lama.map(function (b) {
-      return {
-        judul: b.judul || '',
-        nomor: b.nilai || b.nomor || '',
-        keterangan: '',
-        ikon: IKON_BADGE_LAMA[String(b.ikon)] || 'perisai',
-        sorot: ''
-      };
-    });
+    return Array.isArray(cfg.legalitas) ? cfg.legalitas : [];
   }
 
   /** Baris legalitas yang ditandai untuk disorot di beranda. */
@@ -384,8 +391,7 @@
 
     var nama = cfg.nama_pesantren || 'Portal Donasi';
     var sosial = Array.isArray(cfg.sosial_json) ? cfg.sosial_json : [];
-    // Daftar legalitas diatur Superadmin lewat panel. Pemasangan lama yang
-    // belum punya sheet Legalitas tetap terlayani oleh badge_json.
+    // Daftar legalitas sepenuhnya diatur Superadmin lewat panel.
     var legal = daftarLegalitas(cfg);
     var tautanCepat = (section && section.footer && section.footer.konten && section.footer.konten.tautan) || [];
 
@@ -515,7 +521,7 @@
   global.UI = {
     ikon: ikon, aman: aman, rupiah: rupiah, angkaID: angkaID,
     tanggal: tanggal, waktu: waktu, inisial: inisial, paramUrl: paramUrl,
-    gambar: gambar, toast: toast, salin: salin,
+    gambar: gambar, aset: aset, toast: toast, salin: salin,
     hitungNaik: hitungNaik, amatiSekali: amatiSekali,
     ungkap: ungkap, kurangGerak: function () { return KURANG_GERAK; },
     mulaiTema: mulaiTema, gantiTema: gantiTema,
