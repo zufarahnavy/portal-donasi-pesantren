@@ -48,6 +48,36 @@
   var _berjalan = {};
   var _epochTulis = 0;
 
+  /**
+   * Aksi panel yang hanya MEMBACA, dan karena itu boleh digabungkan serta
+   * disimpan sebentar di memori.
+   *
+   * Daftarnya ditulis tangan, bukan ditebak dari nama. Dua aksi di bawah ini
+   * sengaja TIDAK ada di sini meski namanya terdengar seperti pembacaan:
+   *   • notifTes   — benar-benar mengirim pesan WhatsApp
+   *   • buktiUrl   — memuat berkas besar dan tercatat di jejak aktivitas,
+   *                  jadi tiap pembukaannya memang harus sampai ke server
+   * Hal yang sama berlaku untuk exportDonasi dan crmEkspor.
+   */
+  var BACA_PANEL = {
+    dashboard: 1, donasiList: 1, donasiDetail: 1, laporanRekap: 1, programPanel: 1,
+    crmList: 1, crmStat: 1, crmDetail: 1, crmGanda: 1,
+    waPerangkat: 1, blastPenerima: 1, blastList: 1,
+    sectionList: 1, beritaPanel: 1, formulirList: 1, kontenList: 1,
+    pengaturanList: 1, penggunaList: 1, notifTemplate: 1, notifAntrean: 1,
+    logList: 1, migrasiCek: 1, sistemStatus: 1
+  };
+
+  /** Umur simpanan di memori: cukup untuk bolak-balik menu, terlalu pendek untuk basi. */
+  var UMUR_BACA_MS = 15000;
+  var _simpanBaca = {};
+
+  function kunciBaca(action, data, token) {
+    return action + '|' + JSON.stringify(data || {}) + '|' + String(token || '').slice(-12);
+  }
+
+  function buangSimpananBaca() { _simpanBaca = {}; }
+
   function jalankanGet(action, params) {
     var q = ['action=' + encodeURIComponent(action), 'cid=' + encodeURIComponent(CID)];
     Object.keys(params || {}).forEach(function (k) {
@@ -86,10 +116,7 @@
     return p;
   }
 
-  /** Semua aksi tulis dan aksi panel. */
-  function post(action, data, token) {
-    pastiSiap();
-    _epochTulis++;
+  function kirimPost(action, data, token) {
     return fetch(URL_GAS, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // WAJIB, jangan diubah
@@ -102,6 +129,59 @@
         origin: global.location ? global.location.origin : ''
       })
     }).then(bacaJawaban);
+  }
+
+  /**
+   * Semua aksi tulis dan aksi panel.
+   *
+   * Pembacaan panel diperlakukan berbeda dari penulisan, dan perbedaan itu
+   * yang membuat panel terasa cepat:
+   *
+   *   • Dua permintaan baca yang identik dan berbarengan digabung menjadi
+   *     satu. Dulu satu klik bisa membangunkan tiga eksekusi server sekaligus
+   *     ketika ada penangan klik yang menumpuk.
+   *   • Hasil baca disimpan 15 detik di memori, sehingga bolak-balik antar
+   *     menu tidak menunggu perjalanan ke server untuk kedua kalinya.
+   *   • Begitu ada satu saja penulisan, seluruh simpanan dibuang. Data basi
+   *     setelah menyimpan perubahan jauh lebih berbahaya daripada lambat.
+   */
+  function post(action, data, token) {
+    pastiSiap();
+    var baca = !!BACA_PANEL[action] && !(data && data._fresh);
+
+    if (!baca) {
+      _epochTulis++;
+      buangSimpananBaca();                       // apa pun yang ditulis, anggap semua basi
+      return kirimPost(action, data, token);
+    }
+
+    var kunci = kunciBaca(action, data, token);
+    var simpan = _simpanBaca[kunci];
+    if (simpan && Date.now() - simpan.t < UMUR_BACA_MS) return Promise.resolve(simpan.r);
+    if (_berjalan[kunci]) return _berjalan[kunci];
+
+    var p = kirimPost(action, data, token).then(function (res) {
+      _simpanBaca[kunci] = { t: Date.now(), r: res };
+      delete _berjalan[kunci];
+      return res;
+    }, function (err) {
+      delete _berjalan[kunci];
+      throw err;
+    });
+    _berjalan[kunci] = p;
+    return p;
+  }
+
+  /**
+   * Mulai mengambil data sebelum diminta — dipakai panel saat kursor
+   * menyentuh sebuah menu. Kegagalannya sengaja didiamkan: ini hanya
+   * ancang-ancang, bukan permintaan yang ditunggu siapa pun.
+   */
+  function prefetch(action, data, token) {
+    if (!SIAP || !BACA_PANEL[action]) return;
+    var kunci = kunciBaca(action, data, token);
+    if (_berjalan[kunci] || _simpanBaca[kunci]) return;
+    try { post(action, data, token).catch(function () {}); } catch (e) {}
   }
 
   /**
@@ -162,6 +242,7 @@
   }
 
   function bersihkanCache() {
+    buangSimpananBaca();
     try {
       Object.keys(global.localStorage).forEach(function (k) {
         if (k.indexOf('pd_') === 0 && k !== 'pd_cid' && k !== 'pd_tema') simpanHapus(k);
@@ -201,6 +282,7 @@
     cid: CID,
     get: get,
     post: post,
+    prefetch: prefetch,
     batch: batch,
     swr: swr,
     cacheAmbil: cacheAmbil,

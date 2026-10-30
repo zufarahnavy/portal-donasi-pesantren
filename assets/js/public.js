@@ -201,14 +201,12 @@
     if (!el) return;
     if (!daftar.length) { $('bagian-statistik').style.display = 'none'; return; }
 
-    el.innerHTML = daftar.map(function (s, i) {
-      return '<div class="kartu kartu-naik statistik-kartu">' +
-        '<span class="ikon-wadah' + (i % 2 ? ' ikon-wadah-emas' : '') + '">' +
-          UI.ikon(IKON_STAT[s.ikon] || 'bintang', 'ikon-lg') + '</span>' +
-        '<div>' +
-          '<div class="statistik-nilai" data-nilai="' + Number(s.nilai || 0) + '" data-satuan="' + UI.aman(s.satuan || '') + '">0</div>' +
-          '<div class="statistik-label">' + UI.aman(s.label) + '</div>' +
-        '</div></div>';
+    el.innerHTML = daftar.map(function (s) {
+      return '<div class="neraca-butir">' +
+        '<span class="neraca-ikon">' + UI.ikon(IKON_STAT[s.ikon] || 'bintang', 'ikon-sm') + '</span>' +
+        '<div class="statistik-nilai" data-nilai="' + Number(s.nilai || 0) + '" data-satuan="' + UI.aman(s.satuan || '') + '">0</div>' +
+        '<div class="statistik-label">' + UI.aman(s.label) + '</div>' +
+      '</div>';
     }).join('');
 
     UI.amatiSekali(el, function () {
@@ -225,36 +223,48 @@
 
   // ====================================================== Pilar
   var IKON_PILAR = { local_library: 'pustaka', volunteer_activism: 'hati', domain: 'gedung' };
+  var ANGKA_PILAR = ['I', 'II', 'III', 'IV', 'V', 'VI'];
 
+  /**
+   * Tiga pilar ditulis sebagai ruas bernomor, bukan kartu sejajar.
+   *
+   * Kartu menuntut keputusan: ia minta dibandingkan lalu diklik. Pilar bukan
+   * barang yang dipilih — ia bagian profil lembaga yang dibaca berurutan.
+   * Karena itu bentuknya mengikuti halaman buku profil: nomor Romawi, garis
+   * rambut antarruas, dan ajakan berupa tautan, bukan tombol penuh.
+   */
   function gambarPilar(sec) {
     var el = $('pilar-daftar');
     if (!el) return;
     var daftar = (sec && sec.konten && sec.konten.pilar) || [];
     if (!daftar.length) { el.innerHTML = ''; return; }
 
-    el.innerHTML = daftar.map(function (p) {
+    el.innerHTML = daftar.map(function (p, i) {
       var emas = p.warna === 'aksen';
-      return '<div class="kartu kartu-naik pilar-kartu">' +
-        '<div class="lajur" style="gap:var(--s-md)">' +
-          '<span class="ikon-wadah' + (emas ? ' ikon-wadah-emas' : '') + '">' +
-            UI.ikon(IKON_PILAR[p.ikon] || 'kitab', 'ikon-lg') + '</span>' +
-          '<div>' +
-            (p.label ? '<span class="label-atas" style="color:var(--emas)">' + UI.aman(p.label) + '</span>' : '') +
-            '<h3 style="font-family:var(--badan);font-size:1.125rem;margin:0 0 .5rem">' + UI.aman(p.judul) + '</h3>' +
-            '<p class="kecil redup" style="margin:0">' + UI.aman(p.isi || '') + '</p>' +
-          '</div>' +
+      return '<article class="pilar-baris' + (emas ? ' pilar-emas' : '') + '">' +
+        '<div class="pilar-urut">' +
+          '<span class="pilar-angka" aria-hidden="true">' + (ANGKA_PILAR[i] || (i + 1)) + '</span>' +
+          '<span class="pilar-tanda">' + UI.ikon(IKON_PILAR[p.ikon] || 'kitab', 'ikon-sm') +
+            (p.label ? '<span>' + UI.aman(p.label) + '</span>' : '') + '</span>' +
+        '</div>' +
+        '<div class="pilar-tubuh">' +
+          '<h3>' + UI.aman(p.judul) + '</h3>' +
+          '<p>' + UI.aman(p.isi || '') + '</p>' +
           (Array.isArray(p.poin) && p.poin.length ? '<div class="pilar-poin">' + p.poin.map(function (x) {
             return '<div>' + UI.ikon('centang', 'ikon-sm') + '<span>' + UI.aman(x) + '</span></div>';
           }).join('') + '</div>' : '') +
         '</div>' +
-        '<a class="tombol ' + (emas ? 'tombol-emas' : 'tombol-hantu') + ' tombol-penuh" href="#program">' +
-          UI.aman(p.tombol || 'Dukung Program Ini') + '</a>' +
-      '</div>';
+        '<div class="pilar-ajak">' +
+          '<a class="tautan-lanjut" href="#program"><span>' +
+            UI.aman(p.tombol || 'Dukung Program Ini') + '</span>' + UI.ikon('lanjut', 'ikon-sm') + '</a>' +
+        '</div>' +
+      '</article>';
     }).join('');
   }
 
   // ====================================================== Program
   var LABEL_KATEGORI = { semua: 'Semua Program', wakaf: 'Wakaf', beasiswa: 'Beasiswa Santri', infaq: 'Infaq & Sedekah' };
+  var tabTerpasang = false;
 
   function gambarTabKategori() {
     var el = $('tab-kategori');
@@ -270,6 +280,15 @@
       return '<button type="button" role="tab" data-kategori="' + k + '" aria-selected="' +
         (k === kategoriAktif) + '">' + UI.aman(LABEL_KATEGORI[k] || k) + '</button>';
     }).join('');
+
+    // `#tab-kategori` adalah elemen tetap milik index.html — yang diganti di
+    // atas hanya isinya. Karena beranda dirender dua kali (sekali dari
+    // simpanan browser, sekali dari data segar), memasang pendengar di sini
+    // tanpa penjaga akan menumpuk: satu klik tab berakhir merender daftar
+    // program dua kali. Pendengarnya didelegasikan, jadi cukup satu untuk
+    // seluruh tombol, termasuk tombol yang baru saja ditulis ulang.
+    if (tabTerpasang) return;
+    tabTerpasang = true;
 
     el.addEventListener('click', function (e) {
       var b = e.target.closest('button[data-kategori]');

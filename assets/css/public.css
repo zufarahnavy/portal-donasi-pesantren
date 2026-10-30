@@ -209,43 +209,118 @@
 .judul-tengah .label-atas { justify-content: center; }
 .judul-tengah h2 { text-wrap: balance; }
 
-/* ---------------------------------------------------------------- Statistik */
-/* Kartu statistik sengaja paling datar di halaman ini: ia melaporkan angka,
-   tidak meminta diklik. Kartu program yang berhak tampil paling tinggi. */
-.statistik-kartu {
-  padding: var(--s-lg);
-  display: flex; flex-direction: column; gap: var(--s-md);
-  box-shadow: none;
-  background: var(--permukaan);
-}
-.statistik-kartu.kartu-naik:hover { transform: none; box-shadow: var(--bayang-1); }
+/* ---------------------------------------------------------------- Neraca (statistik) */
+/* Angka pertanggungjawaban ditulis seperti satu halaman laporan: judulnya
+   berdiri di satu sisi, angkanya berbaris di sisi lain, dipisah garis rambut.
+   Tidak ada kotak yang perlu digambar — tak satu pun angka di sini meminta
+   diklik, dan empat kartu kembar justru membuat halaman terasa dicetak mesin. */
+.neraca { display: grid; gap: var(--s-xl); }
+.neraca .judul-bagian { margin-bottom: 0; }
+
+/* Dua lajur, bukan empat. Satu baris berisi empat angka memaksa nilai
+   terpanjang ("Rp 167,7 jt") patah ke baris kedua dan merusak garis dasar
+   bersama — justru hal yang paling cepat terbaca sebagai halaman asal jadi. */
+.neraca-angka { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.neraca-butir { padding: var(--s-lg) var(--s-md); }
+.neraca-butir:nth-child(2n) { border-left: 1px solid var(--garis); padding-left: var(--s-xl); }
+.neraca-butir:nth-child(2n + 1) { padding-left: 0; }
+.neraca-butir:nth-child(-n + 2) { padding-top: 0; }
+.neraca-butir:nth-child(n + 3) { border-top: 1px solid var(--garis); }
+.neraca-butir:nth-last-child(-n + 2) { padding-bottom: 0; }
+
+.neraca-ikon { display: block; color: var(--emas); opacity: .9; margin-bottom: .6rem; }
 .statistik-nilai {
   font-family: var(--judul); font-weight: 600;
-  font-size: clamp(1.875rem, 4vw, 2.375rem);
-  color: var(--teks-kuat); line-height: 1;
+  font-size: clamp(1.5rem, 3.4vw, 2.5rem);
+  color: var(--teks-kuat); line-height: 1; white-space: nowrap;
 }
-.statistik-label { font-size: 0.875rem; font-weight: 700; color: var(--primer); margin-top: 0.35rem; }
+.statistik-label {
+  font-size: 0.8125rem; font-weight: 600; line-height: 1.45;
+  color: var(--teks); opacity: .78; margin-top: 0.45rem; max-width: 24ch;
+}
+
+@media (min-width: 900px) {
+  .neraca {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(var(--s-xl), 5vw, var(--s-3xl));
+    align-items: center;
+  }
+  .neraca-butir { padding: var(--s-xl) var(--s-lg); }
+  .neraca-butir:nth-child(2n) { padding-left: var(--s-2xl); }
+  .neraca-butir:nth-child(2n + 1) { padding-left: 0; }
+  .neraca-butir:nth-child(-n + 2) { padding-top: 0; }
+  .neraca-butir:nth-last-child(-n + 2) { padding-bottom: 0; }
+}
 
 /* ---------------------------------------------------------------- Pilar */
-.pilar-kartu {
-  padding: var(--s-xl);
-  display: flex; flex-direction: column; justify-content: space-between; gap: var(--s-lg);
-  position: relative; overflow: hidden;
+/* Tiga ruas bernomor, bukan tiga kartu sejajar. Angka Romawi besar yang
+   memberi bagian ini iramanya; garis rambut antarruas menggantikan bingkai.
+   Sorotan dikerjakan dengan opacity dan transform saja supaya mulus. */
+/* Garis rambut berhenti di tempat teksnya berhenti; dibiarkan selebar
+   layar, ia menyisakan sepertiga kanan yang kosong dan terlihat belum jadi. */
+.pilar-ruas { display: grid; max-width: 62rem; }
+.pilar-baris {
+  position: relative; isolation: isolate;
+  display: grid; gap: var(--s-md);
+  padding: var(--s-xl) 0;
+  border-top: 1px solid var(--garis);
 }
-.pilar-kartu::before {
+.pilar-baris:first-child { border-top: 0; padding-top: var(--s-sm); }
+.pilar-baris::before {
   content: '';
-  position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-  background: linear-gradient(to bottom, var(--emas-terang), var(--emas));
-  opacity: 0;
-  transition: opacity .3s ease;
+  position: absolute; inset: 0; z-index: -1;
+  border-radius: 16px;
+  background: var(--permukaan-lembut);
+  opacity: 0; transition: opacity .3s ease;
 }
-.pilar-kartu:hover::before { opacity: 1; }
-.pilar-kartu .ikon-wadah { width: 56px; height: 56px; transition: background .28s ease, color .28s ease, transform .28s var(--gerak); }
-.pilar-kartu:hover .ikon-wadah { background: var(--primer); color: #fff; transform: rotate(-4deg) scale(1.05); }
-.pilar-kartu:hover .ikon-wadah-emas { background: var(--emas); color: #fff; }
+.pilar-baris:hover::before { opacity: .55; }
+
+.pilar-urut { display: flex; align-items: baseline; gap: var(--s-md); }
+.pilar-angka {
+  font-family: var(--judul); font-weight: 600; line-height: .85;
+  font-size: clamp(2.5rem, 6vw, 3.75rem);
+  color: var(--emas); opacity: .42;
+  transition: opacity .35s ease, transform .35s var(--gerak);
+}
+.pilar-baris:hover .pilar-angka { opacity: 1; transform: translateY(-3px); }
+.pilar-emas .pilar-angka { opacity: .72; }
+.pilar-tanda {
+  display: inline-flex; align-items: center; gap: .45rem;
+  font-size: .75rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--emas-tua);
+}
+.pilar-tanda .ikon { opacity: .8; }
+
+.pilar-tubuh h3 {
+  font-family: var(--judul); font-size: clamp(1.25rem, 2.4vw, 1.5rem);
+  font-weight: 600; margin: 0 0 .5rem; color: var(--teks-kuat);
+}
+.pilar-tubuh p { margin: 0 0 var(--s-md); max-width: 48ch; color: var(--teks); }
 .pilar-poin { display: flex; flex-direction: column; gap: var(--s-xs); }
 .pilar-poin div { display: flex; gap: var(--s-sm); align-items: flex-start; font-size: 0.875rem; }
 .pilar-poin .ikon { color: var(--primer); margin-top: 2px; }
+
+.tautan-lanjut {
+  display: inline-flex; align-items: center; gap: .5rem;
+  font-weight: 700; font-size: .9375rem; color: var(--primer);
+}
+.tautan-lanjut .ikon { transition: transform .3s var(--gerak); }
+.tautan-lanjut:hover .ikon { transform: translateX(4px); }
+.pilar-emas .tautan-lanjut { color: var(--emas-tua); }
+
+@media (min-width: 860px) {
+  .pilar-baris {
+    grid-template-columns: 9rem minmax(0, 1fr);
+    gap: var(--s-xl) var(--s-2xl);
+    align-items: start;
+    padding: var(--s-2xl) 0;
+  }
+  .pilar-baris::before { inset: 0 calc(var(--s-lg) * -1); }
+  .pilar-urut { flex-direction: column; align-items: flex-start; gap: var(--s-sm); }
+  /* Ajakan berdiri di bawah paragrafnya, bukan di lajur ketiga: lajur ketiga
+     menyisakan lorong kosong selebar layar antara teks dan tautan. */
+  .pilar-ajak { grid-column: 2; margin-top: calc(var(--s-md) * -0.5); }
+}
 
 /* ---------------------------------------------------------------- Kartu kampanye */
 /* Kartu program adalah elemen yang memindahkan uang, jadi ia diberi

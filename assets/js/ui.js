@@ -54,7 +54,13 @@
     gembok: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
     kode: '<rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/><rect x="3" y="15" width="6" height="6" rx="1"/><path d="M15 15h2v2h-2z"/><path d="M19 19h2v2h-2z"/><path d="M15 19v2"/><path d="M19 15h2"/>',
     berkas: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>',
-    masjid: '<path d="M4 21V11h16v10"/><path d="M12 3s3 2.5 3 5H9c0-2.5 3-5 3-5"/><path d="M2 21h20"/><path d="M6 11V8"/><path d="M18 11V8"/>'
+    masjid: '<path d="M4 21V11h16v10"/><path d="M12 3s3 2.5 3 5H9c0-2.5 3-5 3-5"/><path d="M2 21h20"/><path d="M6 11V8"/><path d="M18 11V8"/>',
+    titikTiga: '<circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/>',
+    sampah: '<path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/>' +
+            '<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>',
+    ceklis: '<path d="m5 12 5 5L20 7"/>',
+    silang: '<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>',
+    jeda: '<circle cx="12" cy="12" r="10"/><path d="M12 7v5l3 2"/>'
   };
 
   function ikon(nama, kelas) {
@@ -518,7 +524,59 @@
   }
 
   // ====================================================== Ekspor
+  // ====================================================== Keadaan sibuk tombol
+  /**
+   * Tandai satu tombol sedang menunggu jawaban server.
+   *
+   * Tiga hal yang disengaja:
+   *   • Lebar tombol dikunci sebelum isinya diganti. Tanpa itu, label yang
+   *     memendek membuat tombol menyusut dan barisnya ikut bergeser — gerakan
+   *     yang justru terbaca sebagai halaman tersendat.
+   *   • Label aslinya disimpan di elemen itu sendiri, bukan di variabel
+   *     pemanggil, supaya pemulihannya tidak bergantung pada cabang mana yang
+   *     dilalui ketika permintaan gagal.
+   *   • Penjaga `dataset.sibuk` membuat pemanggilan kedua tidak menimpa label
+   *     asli dengan label sibuk.
+   */
+  function sibuk(tombol, sedang, labelSibuk) {
+    if (!tombol) return;
+    if (sedang) {
+      if (tombol.dataset.sibuk === '1') return;
+      tombol.dataset.sibuk = '1';
+      tombol.dataset.labelAsli = tombol.innerHTML;
+      tombol.style.minWidth = tombol.offsetWidth + 'px';
+      tombol.disabled = true;
+      tombol.setAttribute('aria-busy', 'true');
+      tombol.innerHTML = '<span class="putaran" aria-hidden="true"></span>' +
+                         '<span>' + aman(labelSibuk || 'Memproses…') + '</span>';
+    } else {
+      delete tombol.dataset.sibuk;
+      tombol.disabled = false;
+      tombol.removeAttribute('aria-busy');
+      tombol.style.minWidth = '';
+      if (tombol.dataset.labelAsli) tombol.innerHTML = tombol.dataset.labelAsli;
+    }
+  }
+
+  /**
+   * Bungkus satu janji dengan keadaan sibuk pada tombolnya.
+   *
+   * Dipakai supaya pemanggil tidak perlu mengulang pasangan
+   * sibuk(true)/sibuk(false) — pasangan yang mudah lupa dilepas di cabang
+   * gagal, dan tombolnya tinggal mati selamanya sampai halaman dimuat ulang.
+   */
+  function denganSibuk(tombol, label, kerja) {
+    sibuk(tombol, true, label);
+    return Promise.resolve()
+      .then(kerja)
+      .then(
+        function (h) { sibuk(tombol, false); return h; },
+        function (e) { sibuk(tombol, false); throw e; }
+      );
+  }
+
   global.UI = {
+    sibuk: sibuk, denganSibuk: denganSibuk,
     ikon: ikon, aman: aman, rupiah: rupiah, angkaID: angkaID,
     tanggal: tanggal, waktu: waktu, inisial: inisial, paramUrl: paramUrl,
     gambar: gambar, aset: aset, toast: toast, salin: salin,

@@ -165,6 +165,93 @@
     '</div>';
   }
 
+  // ======================================================= Menu tindakan baris
+
+  /**
+   * Menu "⋯" untuk satu baris tabel.
+   *
+   * Tindakan yang jarang dipakai — apalagi yang merusak seperti menghapus —
+   * tidak pantas berdiri sebagai tombol telanjang di setiap baris. Selain
+   * membuat tabel riuh, tombol hapus yang bersebelahan dengan tombol lain
+   * cepat atau lambat akan tertekan tanpa sengaja. Menu ini menyembunyikannya
+   * satu ketukan lebih dalam, dan menandainya merah di posisi paling bawah.
+   *
+   * @param butir  [{ aksi, label, ikon, bahaya, nonaktif, judul }]
+   */
+  function menuAksi(id, butir) {
+    var isi = butir.filter(Boolean).map(function (b) {
+      if (b.pisah) return '<span class="menu-pisah"></span>';
+      return '<button type="button" role="menuitem"' +
+        (b.bahaya ? ' class="menu-bahaya"' : '') +
+        ' data-aksi="' + aman(b.aksi) + '" data-id="' + aman(id) + '"' +
+        (b.nonaktif ? ' disabled' : '') +
+        (b.judul ? ' title="' + aman(b.judul) + '"' : '') + '>' +
+        (b.ikon ? UI.ikon(b.ikon, 'ikon-sm') : '') +
+        '<span>' + aman(b.label) + '</span>' +
+      '</button>';
+    }).join('');
+
+    return '<span class="menu-aksi">' +
+      '<button type="button" class="menu-picu" aria-haspopup="true" aria-expanded="false" ' +
+        'aria-label="Tindakan lain" title="Tindakan lain">' + UI.ikon('titikTiga', 'ikon-sm') + '</button>' +
+      '<span class="menu-isi" role="menu" hidden>' + isi + '</span>' +
+    '</span>';
+  }
+
+  var menuTerbuka = null;
+
+  function tutupMenu() {
+    if (!menuTerbuka) return;
+    var isi = menuTerbuka.querySelector('.menu-isi');
+    var picu = menuTerbuka.querySelector('.menu-picu');
+    if (isi) { isi.hidden = true; isi.removeAttribute('style'); }
+    if (picu) picu.setAttribute('aria-expanded', 'false');
+    menuTerbuka = null;
+  }
+
+  /**
+   * Menu dibuka dengan posisi `fixed` yang dihitung dari letak tombolnya.
+   * Alasannya praktis: tabel panel berada di dalam pembungkus yang bisa
+   * digulir ke samping, dan menu ber-`position:absolute` akan terpotong di
+   * tepi pembungkus itu. Simpulnya sendiri sengaja TIDAK dipindahkan ke
+   * body, supaya kliknya tetap merambat ke #isi dan modul yang bersangkutan
+   * tetap menangkapnya lewat satu penangan yang sama.
+   */
+  function bukaMenu(picu) {
+    var bungkus = picu.closest('.menu-aksi');
+    if (menuTerbuka === bungkus) { tutupMenu(); return; }
+    tutupMenu();
+
+    var isi = bungkus.querySelector('.menu-isi');
+    isi.hidden = false;
+    picu.setAttribute('aria-expanded', 'true');
+    menuTerbuka = bungkus;
+
+    var r = picu.getBoundingClientRect();
+    var lebar = isi.offsetWidth || 200;
+    var tinggi = isi.offsetHeight || 160;
+    var keAtas = r.bottom + tinggi + 8 > global.innerHeight && r.top > tinggi + 8;
+
+    isi.style.position = 'fixed';
+    isi.style.top = (keAtas ? r.top - tinggi - 6 : r.bottom + 6) + 'px';
+    isi.style.left = Math.max(8, Math.min(r.right - lebar, global.innerWidth - lebar - 8)) + 'px';
+
+    var pertama = isi.querySelector('button:not([disabled])');
+    if (pertama) pertama.focus();
+  }
+
+  // Satu penangan untuk seluruh panel — dipasang sekali, tidak pernah menumpuk.
+  D.addEventListener('click', function (e) {
+    var picu = e.target.closest ? e.target.closest('.menu-picu') : null;
+    if (picu) { e.stopPropagation(); bukaMenu(picu); return; }
+    // Klik pada butir menu menutup menunya; aksinya sendiri ditangani modul.
+    if (menuTerbuka && e.target.closest('.menu-isi')) { tutupMenu(); return; }
+    tutupMenu();
+  });
+  D.addEventListener('keydown', function (e) { if (e.key === 'Escape') tutupMenu(); });
+  global.addEventListener('resize', tutupMenu);
+  global.addEventListener('scroll', tutupMenu, true);
+
   // ======================================================= Modal
 
   var tombolPemanggil = null;
@@ -327,18 +414,22 @@
     }
   }
 
-  /** Tombol dengan keadaan "sedang bekerja" supaya tidak ditekan dua kali. */
-  function sibuk(tombol, sedang, labelSibuk) {
-    if (!tombol) return;
-    if (sedang) {
-      tombol.dataset.labelAsli = tombol.innerHTML;
-      tombol.disabled = true;
-      tombol.innerHTML = aman(labelSibuk || 'Memproses…');
-    } else {
-      tombol.disabled = false;
-      if (tombol.dataset.labelAsli) tombol.innerHTML = tombol.dataset.labelAsli;
-    }
-  }
+  /**
+   * Tombol dengan keadaan "sedang bekerja".
+   *
+   * Dua hal yang dikerjakannya, dan keduanya penting:
+   *   • Tombol dinonaktifkan, jadi tidak mungkin ditekan dua kali dan
+   *     mengirim donasi atau blast yang sama berulang.
+   *   • Lebar tombol dikunci pada lebar aslinya sebelum tulisannya diganti.
+   *     Tanpa itu, tombol mengkerut atau melebar saat ditekan dan tata letak
+   *     di sekitarnya ikut melompat — persis gerakan yang membuat sebuah
+   *     halaman terasa murah.
+   */
+  // Keadaan sibuk tombol tinggal satu tempat saja, di UI, supaya panel dan
+  // halaman publik memakai perilaku yang persis sama: putaran, aria-busy, dan
+  // lebar yang dikunci agar barisnya tidak bergeser.
+  var sibuk = UI.sibuk;
+  var denganSibuk = UI.denganSibuk;
 
   // ======================================================= Grafik sederhana
 
@@ -459,6 +550,60 @@
     el('tirai').hidden = true;
   }
 
+  /**
+   * Ganti #isi dengan simpul yang benar-benar baru.
+   *
+   * Ini bukan kerapian, ini perbaikan cacat. Setiap modul memasang penangan
+   * klik pada wadah #isi sendiri (`wadah.addEventListener`). Mengosongkan
+   * `innerHTML` membuang anak-anaknya, tetapi penangan yang menempel pada
+   * #isi itu sendiri tetap hidup. Akibatnya, berpindah dasbor → donasi →
+   * dasbor → donasi menyisakan dua penangan donasi, lalu tiga, lalu empat.
+   * Satu klik kemudian menembakkan permintaan yang sama berkali-kali ke
+   * Apps Script — dan dari kursi pengguna, itulah "ngelag" yang dirasakan.
+   *
+   * Mengganti simpulnya membuang seluruh penangan lama sekaligus, tanpa
+   * modul perlu mengingat apa pun untuk dilepas.
+   */
+  function wadahSegar() {
+    var lama = el('isi');
+    var baru = D.createElement('main');
+    baru.id = 'isi';
+    baru.className = lama.className;
+    baru.setAttribute('tabindex', '-1');
+    baru.innerHTML = tunggu(6);
+    lama.parentNode.replaceChild(baru, lama);
+    baru.scrollTop = 0;
+    return baru;
+  }
+
+  /** Data pembuka tiap halaman — dipakai untuk mendahului klik. */
+  var PEMBUKA = {
+    dasbor:     ['dashboard', {}],
+    donasi:     ['donasiList', {}],
+    program:    ['programPanel', {}],
+    crm:        ['crmStat', {}],
+    blast:      ['blastList', {}],
+    beranda:    ['sectionList', {}],
+    konten:     ['kontenList', {}],
+    formulir:   ['formulirList', {}],
+    pengaturan: ['pengaturanList', {}],
+    notifikasi: ['notifTemplate', {}],
+    pengguna:   ['penggunaList', {}],
+    sistem:     ['sistemStatus', {}]
+  };
+
+  /**
+   * Mulai mengambil data begitu kursor menyentuh menu, jauh sebelum diklik.
+   * Jarak antara "mengarahkan kursor" dan "menekan" biasanya 200–400 ms —
+   * cukup untuk menyelesaikan satu perjalanan ke Apps Script, sehingga
+   * halamannya sudah siap saat benar-benar dibuka.
+   */
+  function dahului(kunci) {
+    var p = PEMBUKA[kunci];
+    if (!p || !P.sesi) return;
+    API.prefetch(p[0], p[1], P.sesi.token);
+  }
+
   /** Pindah halaman: modul menerima wadah #isi dan merender sendiri. */
   function buka(kunci, paksa) {
     var sa = P.sesi && P.sesi.me.peran === 'SUPERADMIN';
@@ -484,9 +629,7 @@
       try { history.replaceState(null, '', '#/' + kunci); } catch (e) {}
     }
 
-    var wadah = el('isi');
-    wadah.innerHTML = tunggu(6);
-    wadah.scrollTop = 0;
+    var wadah = wadahSegar();
 
     Promise.resolve()
       .then(function () { return P.modul[kunci](wadah); })
@@ -603,6 +746,13 @@
       buka(a.getAttribute('data-halaman'));
     });
 
+    // Ancang-ancang: kursor menyentuh menu → datanya mulai diambil.
+    // `pointerover` ikut menangkap sentuhan jari sebelum jadi klik.
+    el('sisi-menu').addEventListener('pointerover', function (e) {
+      var a = e.target.closest('a[data-halaman]');
+      if (a) dahului(a.getAttribute('data-halaman'));
+    });
+
     global.addEventListener('hashchange', function () {
       var k = (location.hash || '').replace('#/', '');
       if (k && k !== P.halaman) buka(k);
@@ -641,7 +791,8 @@
     panggil: panggil, panggilBanyak: panggilBanyak,
     toast: toast, galat: galat, tunggu: tunggu, kosong: kosong, lencana: lencana, saklar: saklar,
     paginasi: paginasi, modal: modal, tutupModal: tutupModal, konfirmasi: konfirmasi,
-    bidang: bidang, nilaiForm: nilaiForm, bacaBerkas: bacaBerkas, unduhTeks: unduhTeks, sibuk: sibuk,
+    bidang: bidang, nilaiForm: nilaiForm, bacaBerkas: bacaBerkas, unduhTeks: unduhTeks,
+    sibuk: sibuk, denganSibuk: denganSibuk, menuAksi: menuAksi, tutupMenu: tutupMenu,
     grafikGaris: grafikGaris, grafikBatang: grafikBatang,
     buka: buka, subJudul: subJudul, tampilkanMasuk: tampilkanMasuk, tampilkanPanel: tampilkanPanel,
     keluar: keluar, pasang: pasang, muatSesi: muatSesi, simpanSesi: simpanSesi

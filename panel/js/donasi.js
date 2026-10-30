@@ -12,6 +12,31 @@
   var P = PANEL;
   var saring = { q: '', status: '', program_id: '', dari: '', sampai: '', page: 1 };
 
+  /**
+   * Empat status, dan hanya dua di antaranya keputusan pengurus.
+   *
+   * "Menunggu" dan "Dikonfirmasi donatur" datang dengan sendirinya dari
+   * perilaku donatur. "Terverifikasi" dan "Ditolak" tidak pernah terjadi
+   * tanpa seseorang menekannya — dan keduanya mengubah angka yang tampil
+   * di beranda, jadi keduanya selalu meminta konfirmasi lebih dulu.
+   */
+  var STATUS = [
+    { nilai: 'Masuk',           label: 'Menunggu pencocokan', warna: 'ingat'  },
+    { nilai: 'Dikonfirmasi WA', label: 'Dikonfirmasi donatur', warna: 'emas'  },
+    { nilai: 'Terverifikasi',   label: 'Terverifikasi',        warna: 'sukses' },
+    { nilai: 'Ditolak',         label: 'Ditolak',              warna: 'galat' }
+  ];
+
+  function statusInfo(nilai) {
+    for (var i = 0; i < STATUS.length; i++) if (STATUS[i].nilai === String(nilai)) return STATUS[i];
+    return { nilai: String(nilai || '—'), label: String(nilai || '—'), warna: 'netral' };
+  }
+
+  function lencanaStatus(nilai) {
+    var s = statusInfo(nilai);
+    return P.lencana(s.label, s.warna);
+  }
+
   // ====================================================== Daftar donasi
   P.P.modul.donasi = function (wadah) {
     if (P.P.data.donasiSaring) {
@@ -27,8 +52,9 @@
             'value="' + P.aman(saring.q) + '" aria-label="Cari donasi">' +
           '<select id="d-status" aria-label="Saring status">' +
             '<option value="">Semua status</option>' +
-            '<option value="Masuk">Menunggu pencocokan</option>' +
-            '<option value="Dikonfirmasi WA">Sudah dikonfirmasi</option>' +
+            STATUS.map(function (s) {
+              return '<option value="' + P.aman(s.nilai) + '">' + P.aman(s.label) + '</option>';
+            }).join('') +
           '</select>' +
           '<select id="d-program" aria-label="Saring program"><option value="">Semua program</option></select>' +
           '<input type="date" id="d-dari" aria-label="Tanggal mulai" value="' + P.aman(saring.dari) + '">' +
@@ -67,8 +93,134 @@
       var hal = e.target.closest('.hal button[data-ke]');
       if (hal && !hal.disabled) { saring.page = Number(hal.getAttribute('data-ke')); muat(); return; }
 
+      // Butir menu tindakan diperiksa lebih dulu, sebelum klik baris —
+      // kalau tidak, menekan "Hapus" juga akan membuka rincian di belakangnya.
+      var butir = e.target.closest('[data-aksi][data-id]');
+      if (butir) {
+        e.stopPropagation();
+        jalankanAksi(butir.getAttribute('data-aksi'), butir.getAttribute('data-id'));
+        return;
+      }
+      if (e.target.closest('.menu-aksi')) return;
+
       var baris = e.target.closest('tr[data-id]');
       if (baris) rincian(baris.getAttribute('data-id'));
+    });
+  }
+
+  // ====================================================== Putusan atas donasi
+
+  /**
+   * Satu pintu untuk seluruh tindakan baris, dipanggil baik dari menu "⋯"
+   * di tabel maupun dari tombol di dalam modal rincian. Dengan begitu
+   * kalimat konfirmasinya tidak pernah berbeda antara dua tempat itu.
+   */
+  function jalankanAksi(aksi, id) {
+    if (aksi === 'rincian')     return rincian(id);
+    if (aksi === 'kuitansi')    return rincian(id);
+    if (aksi === 'verifikasi')  return ubahStatus(id, 'Terverifikasi');
+    if (aksi === 'tolak')       return ubahStatus(id, 'Ditolak');
+    if (aksi === 'menunggu')    return ubahStatus(id, 'Masuk');
+    if (aksi === 'hapus')       return hapus(id);
+  }
+
+  function ubahStatus(id, status) {
+    if (status === 'Ditolak') return tanyaPenolakan(id);
+
+    var kalimat = status === 'Terverifikasi'
+      ? 'Donasi ' + id + ' akan dihitung sebagai dana yang benar-benar masuk, dan ' +
+        'angka pada program terkait langsung bertambah di halaman publik. Pastikan ' +
+        'nominalnya sudah Anda cocokkan dengan mutasi rekening.'
+      : 'Donasi ' + id + ' dikembalikan ke status menunggu pencocokan.';
+
+    P.konfirmasi(status === 'Terverifikasi' ? 'Tandai sudah terverifikasi?' : 'Kembalikan ke menunggu?',
+                 kalimat, status === 'Terverifikasi' ? 'Ya, verifikasi' : 'Kembalikan')
+      .then(function (ya) { if (ya) kirimStatus(id, status, ''); });
+  }
+
+  /** Penolakan selalu meminta alasan — backend pun menolak tanpa itu. */
+  function tanyaPenolakan(id) {
+    var w = P.modal({
+      judul: 'Tolak donasi ' + id + '?',
+      isi: '<p style="margin:0 0 var(--s-md)">Donasi ini tidak akan dihitung ke progres program, ' +
+             'bahkan bila donaturnya kemudian mengunggah bukti atau menekan tombol konfirmasi. ' +
+             'Barisnya tetap tersimpan sebagai catatan.</p>' +
+           '<form id="form-tolak">' +
+             P.bidang({ nama: 'catatan', label: 'Alasan penolakan', tipe: 'area', baris: 3, wajib: true,
+                        petunjuk: 'Dana tidak pernah masuk ke rekening; sudah dikonfirmasi ke donatur.',
+                        bantu: 'Tersimpan pada baris donasi dan jejak aktivitas, supaya pengurus ' +
+                               'lain tidak perlu menebak di kemudian hari.' }) +
+           '</form>',
+      kaki: '<button type="button" class="tombol tombol-lembut" data-tutup>Batal</button>' +
+            '<button type="button" class="tombol tombol-bahaya" id="tolak-ok">Tolak donasi</button>'
+    });
+
+    w.querySelector('#tolak-ok').addEventListener('click', function () {
+      var catatan = String(P.nilaiForm(document.getElementById('form-tolak')).catatan || '').trim();
+      if (!catatan) {
+        P.toast('Alasan penolakan masih kosong.', 'galat');
+        document.getElementById('f-catatan').focus();
+        return;
+      }
+      kirimStatus(id, 'Ditolak', catatan, this);
+    });
+  }
+
+  function kirimStatus(id, status, catatan, tombol) {
+    return P.denganSibuk(tombol, 'Menyimpan…', function () {
+      return P.panggil('donasiStatus', { id: id, status: status, catatan: catatan });
+    }).then(function (h) {
+      P.tutupModal();
+      P.toast('Donasi ' + id + ' ditandai "' + statusInfo(status).label.toLowerCase() + '".', 'sukses');
+      return muat();
+    }).catch(P.galat);
+  }
+
+  function hapus(id) {
+    if (P.P.sesi.me.peran !== 'SUPERADMIN') {
+      P.modal({
+        judul: 'Penghapusan khusus Superadmin',
+        isi: '<p style="margin:0">Menghapus donasi berarti membuang catatan keuangan, jadi ' +
+             'hanya Superadmin yang bisa melakukannya.</p>' +
+             '<p class="kecil redup">Untuk donasi yang uangnya memang tidak pernah masuk, ' +
+             'pilih <b>Tolak donasi</b>. Efeknya pada angka program sama persis — bedanya ' +
+             'jejaknya tetap utuh dan bisa ditinjau ulang kapan saja.</p>'
+      });
+      return;
+    }
+
+    var w = P.modal({
+      judul: 'Hapus donasi ' + id + '?',
+      isi: '<p style="margin:0 0 var(--s-md)">Barisnya dibuang dari database dan angka program ' +
+             'dihitung ulang. Bukti transfer serta kuitansinya dipindahkan ke tempat sampah Google ' +
+             'Drive, jadi masih bisa dipulihkan selama 30 hari.</p>' +
+           '<div class="pesan pesan-ingat" style="margin-bottom:var(--s-md)">Bila yang Anda maksud ' +
+             'adalah donasi yang uangnya tidak masuk, <b>Tolak donasi</b> lebih tepat: angkanya ' +
+             'sama-sama tidak dihitung, tetapi catatannya tidak hilang.</div>' +
+           '<form id="form-hapus">' +
+             P.bidang({ nama: 'alasan', label: 'Alasan penghapusan', tipe: 'area', baris: 2, wajib: true,
+                        petunjuk: 'Donasi percobaan saat pengujian sistem.',
+                        bantu: 'Disalin ke jejak aktivitas bersama nama, nominal, dan programnya.' }) +
+           '</form>',
+      kaki: '<button type="button" class="tombol tombol-lembut" data-tutup>Batal</button>' +
+            '<button type="button" class="tombol tombol-bahaya" id="hapus-ok">Hapus permanen</button>'
+    });
+
+    w.querySelector('#hapus-ok').addEventListener('click', function () {
+      var alasan = String(P.nilaiForm(document.getElementById('form-hapus')).alasan || '').trim();
+      if (!alasan) {
+        P.toast('Alasan penghapusan masih kosong.', 'galat');
+        document.getElementById('f-alasan').focus();
+        return;
+      }
+      var t = this;
+      P.denganSibuk(t, 'Menghapus…', function () {
+        return P.panggil('donasiHapus', { id: id, alasan: alasan });
+      }).then(function () {
+        P.tutupModal();
+        P.toast('Donasi ' + id + ' dihapus.', 'sukses');
+        return muat();
+      }).catch(P.galat);
     });
   }
 
@@ -100,8 +252,10 @@
     return '<div class="baris" style="gap:.5rem;flex-wrap:wrap;margin-bottom:var(--s-md)">' +
       '<span class="tag-kecil">Total ' + P.rupiah(r.total_nominal) + '</span>' +
       '<span class="tag-kecil">' + P.angka(total) + ' transaksi</span>' +
-      '<span class="tag-kecil">' + P.angka(r.terkonfirmasi) + ' dikonfirmasi</span>' +
+      '<span class="tag-kecil">' + P.angka(r.terverifikasi || 0) + ' terverifikasi</span>' +
+      '<span class="tag-kecil">' + P.angka(r.terkonfirmasi) + ' dikonfirmasi donatur</span>' +
       '<span class="tag-kecil">' + P.angka(r.menunggu) + ' menunggu</span>' +
+      (r.ditolak ? '<span class="tag-kecil tag-galat">' + P.angka(r.ditolak) + ' ditolak</span>' : '') +
     '</div>';
   }
 
@@ -111,12 +265,16 @@
         'Coba ubah kata kunci, rentang tanggal, atau pilihan program.');
     }
 
+    var sa = P.P.sesi.me.peran === 'SUPERADMIN';
+
     return '<div class="tabel-bungkus"><table class="tabel">' +
       '<thead><tr>' +
         '<th>Nomor &amp; Waktu</th><th>Donatur</th><th>Program</th>' +
         '<th class="kanan">Nominal</th><th>Status</th><th>Bukti</th>' +
+        '<th class="kolom-aksi"><span class="sr-only">Tindakan</span></th>' +
       '</tr></thead><tbody>' +
       d.item.map(function (r) {
+        var st = String(r.status);
         return '<tr data-id="' + P.aman(r.id) + '" style="cursor:pointer" ' +
           'title="Klik untuk melihat rincian">' +
           '<td><span class="mono">' + P.aman(r.id) + '</span><br>' +
@@ -125,10 +283,25 @@
             '<br><span class="mini redup">' + P.aman(r.wa_samar || r.email_samar || '—') + '</span></td>' +
           '<td class="kecil">' + P.aman(r.program) + '</td>' +
           '<td class="angka kanan"><b>' + P.rupiah(r.nominal) + '</b></td>' +
-          '<td>' + (String(r.status).indexOf('Dikonfirmasi') > -1
-            ? P.lencana('Dikonfirmasi', 'sukses') : P.lencana('Menunggu', 'ingat')) + '</td>' +
+          '<td>' + lencanaStatus(st) + '</td>' +
           '<td>' + (r.adaBukti ? P.lencana('Ada', 'emas') : '<span class="mini redup">—</span>') +
             (r.adaKuitansi ? ' ' + P.lencana('Kuitansi', 'sukses') : '') + '</td>' +
+          '<td class="kolom-aksi">' + P.menuAksi(r.id, [
+            { aksi: 'rincian', label: 'Lihat rincian', ikon: 'mata' },
+            { pisah: true },
+            { aksi: 'verifikasi', label: 'Tandai terverifikasi', ikon: 'ceklis',
+              nonaktif: st === 'Terverifikasi',
+              judul: 'Hitung donasi ini sebagai dana yang benar-benar masuk' },
+            { aksi: 'tolak', label: 'Tolak donasi', ikon: 'silang',
+              nonaktif: st === 'Ditolak',
+              judul: 'Jangan hitung donasi ini; wajib disertai alasan' },
+            { aksi: 'menunggu', label: 'Kembalikan ke menunggu', ikon: 'jeda',
+              nonaktif: st === 'Masuk' },
+            { pisah: true },
+            { aksi: 'hapus', label: 'Hapus donasi', ikon: 'sampah', bahaya: true,
+              judul: sa ? 'Membuang baris ini dari database'
+                        : 'Khusus Superadmin' }
+          ]) + '</td>' +
         '</tr>';
       }).join('') +
       '</tbody></table></div>' + P.paginasi(d, 'donasi');
@@ -140,20 +313,34 @@
 
     P.panggil('donasiDetail', { id: id }).then(function (r) {
       w.querySelector('.modal-isi').innerHTML = isiRincian(r);
+      var st = String(r.status);
       w.querySelector('.modal-kaki').innerHTML =
         '<button type="button" class="tombol tombol-lembut" data-tutup>Tutup</button>' +
+        P.menuAksi(r.id, [
+          { aksi: 'verifikasi', label: 'Tandai terverifikasi', ikon: 'ceklis', nonaktif: st === 'Terverifikasi' },
+          { aksi: 'tolak', label: 'Tolak donasi', ikon: 'silang', nonaktif: st === 'Ditolak' },
+          { aksi: 'menunggu', label: 'Kembalikan ke menunggu', ikon: 'jeda', nonaktif: st === 'Masuk' },
+          { pisah: true },
+          { aksi: 'hapus', label: 'Hapus donasi', ikon: 'sampah', bahaya: true }
+        ]) +
         (r.adaBukti ? '<button type="button" class="tombol tombol-lembut" data-bukti>Lihat bukti transfer</button>' : '') +
         '<button type="button" class="tombol tombol-primer" data-kuitansi>' +
           (r.adaKuitansi ? 'Buat ulang kuitansi' : 'Terbitkan kuitansi') + '</button>';
 
+      // Modal punya penangan sendiri karena isinya berada di luar #isi.
+      w.querySelector('.modal-kaki').addEventListener('click', function (e) {
+        var butir = e.target.closest('[data-aksi][data-id]');
+        if (butir) jalankanAksi(butir.getAttribute('data-aksi'), butir.getAttribute('data-id'));
+      });
+
       w.querySelector('[data-kuitansi]').addEventListener('click', function () {
         var t = this;
-        P.sibuk(t, true, 'Menyusun PDF…');
-        P.panggil('kuitansiBuat', { id: r.id }).then(function (h) {
+        P.denganSibuk(t, 'Menyusun PDF…', function () {
+          return P.panggil('kuitansiBuat', { id: r.id });
+        }).then(function (h) {
           P.toast('Kuitansi siap diunduh.', 'sukses');
           window.open(h.unduh, '_blank', 'noopener');
-          P.sibuk(t, false);
-        }).catch(function (e) { P.galat(e); P.sibuk(t, false); });
+        }).catch(P.galat);
       });
 
       var tb = w.querySelector('[data-bukti]');
@@ -176,8 +363,11 @@
         b('Waktu', P.waktu(r.waktu)) +
         b('Program', P.aman(r.program)) +
         b('Nominal', '<b>' + P.rupiah(r.nominal) + '</b>') +
-        b('Status', String(r.status).indexOf('Dikonfirmasi') > -1
-            ? P.lencana('Dikonfirmasi', 'sukses') : P.lencana('Menunggu pencocokan', 'ingat')) +
+        b('Status', lencanaStatus(r.status)) +
+        (r.catatan_pengurus
+          ? b('Catatan pengurus', '<span class="kecil" style="font-weight:400">' +
+              P.aman(r.catatan_pengurus) + '</span>')
+          : '') +
         b('Bukti transfer', r.adaBukti ? P.lencana('Terunggah', 'emas') : '<span class="redup">Belum ada</span>') +
         b('Notifikasi email', P.aman(r.notif_email || '—')) +
         b('Notifikasi WhatsApp', P.aman(r.notif_wa || '—')) +

@@ -425,3 +425,76 @@ table.tabel .baris-tanda { box-shadow: inset 3px 0 0 var(--ingat); }
   .sisi, .batang-isi, .saklar-rel::after { transition: none; }
   .modal-latar { animation: none; }
 }
+
+/* ==========================================================================
+   MENU TINDAKAN BARIS  ( ⋯ )
+   --------------------------------------------------------------------------
+   Menunya dibuka dengan position:fixed dan koordinat yang dihitung di JS.
+   Itu bukan selera: .tabel-bungkus punya overflow-x:auto, dan menu
+   ber-position:absolute akan terpotong rapi di tepi pembungkus itu persis
+   pada baris paling kanan — tempat tombol ini berada.
+   ========================================================================== */
+.kolom-aksi { width: 1%; white-space: nowrap; text-align: right; }
+
+.menu-aksi { position: relative; display: inline-flex; vertical-align: middle; }
+
+.menu-picu {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; flex: none;
+  border: 1px solid transparent; border-radius: var(--r-sm);
+  background: transparent; color: var(--teks-redup); cursor: pointer;
+  transition: background .18s ease, color .18s ease, transform .16s var(--gerak);
+}
+.menu-picu:hover { background: var(--permukaan-lembut); color: var(--primer); }
+.menu-picu:active { transform: scale(.9); }
+.menu-picu[aria-expanded="true"] {
+  background: var(--primer-samar); color: var(--primer); border-color: var(--primer);
+}
+
+.menu-isi {
+  position: fixed; z-index: 120;
+  min-width: 232px; padding: .3rem;
+  display: flex; flex-direction: column;
+  background: var(--permukaan);
+  border: 1px solid var(--garis);
+  border-radius: var(--r-md);
+  box-shadow: var(--bayang-3);
+  animation: menuMuncul .15s var(--gerak);
+}
+.menu-isi[hidden] { display: none; }
+@keyframes menuMuncul {
+  from { opacity: 0; transform: translateY(-4px) scale(.98); }
+  to   { opacity: 1; transform: none; }
+}
+
+.menu-isi button {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .55rem .6rem; width: 100%;
+  border: 0; border-radius: var(--r-sm);
+  background: transparent; color: var(--teks);
+  font-family: var(--badan); font-size: .8125rem; font-weight: 600;
+  text-align: left; cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.menu-isi button:hover:not([disabled]) { background: var(--permukaan-lembut); color: var(--teks-kuat); }
+.menu-isi button svg { flex: none; opacity: .62; }
+.menu-isi button:hover:not([disabled]) svg { opacity: 1; }
+.menu-isi button[disabled] { opacity: .38; cursor: default; }
+
+.menu-isi .menu-bahaya { color: var(--galat); }
+.menu-isi .menu-bahaya:hover:not([disabled]) { background: var(--galat-latar); color: var(--galat); }
+.menu-isi .menu-bahaya svg { opacity: .8; }
+
+.menu-pisah { height: 1px; margin: .3rem .35rem; background: var(--garis-lembut); }
+
+.tag-kecil.tag-galat {
+  background: var(--galat-latar); color: var(--galat);
+  border-color: rgba(168, 50, 42, .22);
+}
+
+@media (max-width: 560px) {
+  .menu-isi { min-width: 0; width: calc(100vw - 2rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-isi { animation: none; }
+}

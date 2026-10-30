@@ -93,6 +93,47 @@ Inilah pengujian terpenting. Kerjakan sebagai donatur sungguhan.
 
 ---
 
+## 5b · Memutuskan status donasi
+
+Empat status donasi: **Masuk** (belum dicocokkan), **Dikonfirmasi WA** (donatur
+sudah menekan tombol konfirmasi), **Terverifikasi** (pengurus sudah mencocokkan
+dengan mutasi rekening), dan **Ditolak** (uangnya tidak pernah masuk, atau
+kiriman ganda).
+
+| Langkah | Yang diharapkan |
+|---|---|
+| Daftar Donasi → tekan ikon **⋮** di ujung kanan satu baris | Menu terbuka berisi rincian, ubah status, dan hapus |
+| Pilih **Tandai terverifikasi** | Lencana status berubah, angka program dihitung ulang |
+| Pilih **Tolak donasi** pada donasi percobaan | Diminta menulis alasan dulu — tanpa alasan, tidak bisa lanjut |
+| Isi alasan, simpan | Status jadi "Ditolak" |
+| Kembali ke beranda publik | Angka terkumpul **berkurang** sebanyak donasi yang ditolak |
+| Buka **Statistik & Audit → Jejak Aktivitas** | Perubahan status tercatat lengkap dengan nama pengurusnya |
+
+> Penolakan bersifat final terhadap hitungan: donasi "Ditolak" tidak pernah
+> ikut menambah angka terkumpul, sekalipun buktinya terlanjur terunggah.
+
+**Hasil:** ______
+
+---
+
+## 5c · Menghapus donasi dan kontak
+
+| Langkah | Yang diharapkan |
+|---|---|
+| Masuk sebagai **Admin** (bukan Superadmin) → menu ⋮ | Pilihan "Hapus donasi" tidak tersedia |
+| Masuk sebagai **Superadmin** → menu ⋮ → **Hapus donasi** | Diminta menulis alasan; tanpa alasan tidak bisa lanjut |
+| Isi alasan, hapus | Baris hilang, angka program dihitung ulang |
+| **Jejak Aktivitas** | Tercatat nama donatur, nominal, program, status terakhir, dan alasannya |
+| CRM Kontak → menu ⋮ satu baris → **Hapus kontak** | Kontak hilang dari daftar |
+| Jalankan **Sinkronkan** di CRM | Kontak yang dihapus **tidak muncul lagi**, walau donasinya masih ada |
+
+> Berkas bukti dan kuitansi di Drive dipindahkan ke tempat sampah, bukan dihapus
+> permanen — masih bisa dipulihkan selama 30 hari bila ternyata salah hapus.
+
+**Hasil:** ______
+
+---
+
 ## 6 · Notifikasi email sampai
 
 | Langkah | Yang diharapkan |

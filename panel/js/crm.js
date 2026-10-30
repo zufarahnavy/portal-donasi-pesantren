@@ -93,6 +93,15 @@
         return;
       }
 
+      // Diperiksa sebelum [data-detail], supaya menekan butir menu tidak
+      // sekalian membuka rincian di belakangnya.
+      var butir = e.target.closest('[data-aksi][data-id]');
+      if (butir) {
+        e.stopPropagation();
+        aksiBaris(butir.getAttribute('data-aksi'), butir.getAttribute('data-id'));
+        return;
+      }
+
       var d = e.target.closest('[data-detail]');
       if (d) { detail(d.getAttribute('data-detail')); return; }
 
@@ -213,8 +222,18 @@
           '<td class="angka kanan">' + (k.total_donasi ? P.rupiah(k.total_donasi) : '—') + '</td>' +
           '<td class="kecil">' + (k.terakhir_dihubungi ? P.jarakWaktu(k.terakhir_dihubungi) : '—') +
             '<br><span class="mini redup">' + P.angka(k.jumlah_pesan) + ' pesan</span></td>' +
-          '<td class="kanan"><button type="button" class="tombol tombol-lembut tombol-kecil" ' +
-            'data-detail="' + P.aman(k.id) + '">Rincian</button></td>' +
+          '<td class="kolom-aksi">' +
+            '<button type="button" class="tombol tombol-lembut tombol-kecil" ' +
+              'data-detail="' + P.aman(k.id) + '">Rincian</button>' +
+            P.menuAksi(k.id, [
+              { aksi: 'detail', label: 'Lihat rincian', ikon: 'mata' },
+              (k.no_wa ? { aksi: 'blastSatu', label: 'Kirim pesan WhatsApp', ikon: 'obrolan' } : null),
+              { aksi: k.opt_out ? 'optin' : 'optout', ikon: k.opt_out ? 'ceklis' : 'silang',
+                label: k.opt_out ? 'Boleh dihubungi lagi' : 'Tandai menolak dihubungi' },
+              { pisah: true },
+              { aksi: 'hapusKontak', label: 'Hapus kontak', ikon: 'sampah', bahaya: true }
+            ]) +
+          '</td>' +
         '</tr>';
       }).join('') + '</tbody></table></div>' + P.paginasi(d, 'crm');
   }
@@ -239,8 +258,93 @@
         '<button type="button" class="tombol tombol-lembut tombol-kecil" data-massal="tag">Beri tag</button>' +
         '<button type="button" class="tombol tombol-lembut tombol-kecil" data-massal="optout">Tandai menolak</button>' +
         '<button type="button" class="tombol tombol-lembut tombol-kecil" data-massal="optin">Boleh dihubungi</button>' +
+        '<button type="button" class="tombol tombol-lembut tombol-kecil tombol-bahaya-halus" ' +
+          'data-massal="hapus">Hapus</button>' +
         '<button type="button" class="tombol tombol-lembut tombol-kecil" data-massal="batal">Batal pilih</button>' +
       '</span></div>';
+  }
+
+  // ======================================================= Tindakan satu baris
+
+  function kontakDi(id) {
+    return halamanKini.item.filter(function (k) { return String(k.id) === String(id); })[0] || {};
+  }
+
+  function aksiBaris(aksi, id) {
+    var k = kontakDi(id);
+
+    if (aksi === 'detail') return detail(id);
+
+    if (aksi === 'blastSatu') {
+      if (!k.no_wa) { P.toast('Kontak ini belum punya nomor WhatsApp.', 'galat'); return; }
+      P.P.data.blastPenerima = [{ nama: k.nama, no_wa: k.no_wa }];
+      P.buka('blast', true);
+      return;
+    }
+
+    if (aksi === 'optout' || aksi === 'optin') {
+      return P.panggil('crmSimpan', { id: id, opt_out: aksi === 'optout' })
+        .then(function () {
+          P.toast(aksi === 'optout'
+            ? '"' + k.nama + '" tidak akan lagi masuk daftar blast.'
+            : '"' + k.nama + '" boleh dihubungi kembali.', 'sukses');
+          return Promise.all([muatKpi(), muatDaftar()]);
+        })
+        .catch(P.galat);
+    }
+
+    if (aksi === 'hapusKontak') return hapusKontak(k);
+  }
+
+  /**
+   * Penghapusan kontak perlu penjelasan, bukan sekadar "Yakin?".
+   *
+   * Daftar kontak ini dibangun ulang dari sheet Donasi tiap kali sinkron
+   * berjalan. Dulu, menghapus satu barisnya membuatnya muncul lagi beberapa
+   * menit kemudian — dan pengurus menyangka tombolnya rusak. Sekarang
+   * penghapusan dicatat di sheet CRM_Hapus dan sinkron melewatinya; itulah
+   * yang dijelaskan di bawah, berikut cara mengembalikannya.
+   */
+  function hapusKontak(k) {
+    var dariDonasi = String(k.sumber) === 'donatur';
+    var dariPanel  = String(k.sumber) === 'pengurus';
+
+    var w = P.modal({
+      judul: 'Hapus kontak ' + (k.nama || '') + '?',
+      isi: '<p style="margin:0 0 var(--s-md)">Kartu kontaknya dibuang dari CRM beserta catatan ' +
+             'interaksinya, dan ia tidak akan ikut lagi dalam blast mana pun.</p>' +
+           (dariDonasi
+             ? '<div class="pesan pesan-info" style="margin-bottom:var(--s-md)">' +
+               '<b>Riwayat donasinya tetap utuh.</b> Yang hilang hanya kartu kontak di CRM; ' +
+               'seluruh transaksi atas nama ini masih tercatat rapi di Daftar Donasi.</div>'
+             : '') +
+           (dariPanel
+             ? '<div class="pesan pesan-ingat" style="margin-bottom:var(--s-md)">Kontak ini berasal ' +
+               'dari sebuah akun panel. Akunnya sendiri tidak ikut terhapus — kelola dari menu ' +
+               'Akun Panel bila itu yang Anda maksud.</div>'
+             : '') +
+           '<p class="kecil redup" style="margin:0 0 var(--s-md)">Penghapusan dicatat di sheet ' +
+             '<b>CRM_Hapus</b> supaya sinkron berikutnya tidak menghidupkannya kembali. Ingin ' +
+             'mengembalikannya suatu saat? Hapus barisnya dari sheet itu, lalu tekan Sinkron.</p>' +
+           '<form id="form-hapus-kontak">' +
+             P.bidang({ nama: 'alasan', label: 'Alasan (boleh dikosongkan)',
+                        petunjuk: 'Kontak percobaan' }) +
+           '</form>',
+      kaki: '<button type="button" class="tombol tombol-lembut" data-tutup>Batal</button>' +
+            '<button type="button" class="tombol tombol-bahaya" id="hk-ok">Hapus kontak</button>'
+    });
+
+    w.querySelector('#hk-ok').addEventListener('click', function () {
+      var alasan = P.nilaiForm(document.getElementById('form-hapus-kontak')).alasan || '';
+      P.denganSibuk(this, 'Menghapus…', function () {
+        return P.panggil('crmHapus', { id: k.id, alasan: alasan });
+      }).then(function (h) {
+        P.tutupModal();
+        P.toast('Kontak "' + (k.nama || k.id) + '" dihapus.', 'sukses');
+        delete terpilih[k.id];
+        return Promise.all([muatKpi(), muatDaftar()]);
+      }).catch(P.galat);
+    });
   }
 
   function aksiMassal(aksi) {
@@ -277,6 +381,16 @@
       return;
     }
 
+    if (aksi === 'hapus') {
+      P.konfirmasi('Hapus ' + ids.length + ' kontak?',
+        'Kartu kontaknya dibuang dari CRM beserta catatan interaksinya. Riwayat donasi ' +
+        'atas nama mereka tetap utuh di Daftar Donasi. Penghapusan dicatat di sheet ' +
+        'CRM_Hapus supaya sinkron berikutnya tidak menghidupkannya kembali.',
+        'Hapus ' + ids.length + ' kontak', true)
+        .then(function (ya) { if (ya) jalankanMassal('hapus', 'Dihapus massal dari panel', null); });
+      return;
+    }
+
     var kalimat = aksi === 'optout'
       ? 'Kontak ini tidak akan pernah masuk daftar blast lagi. Notifikasi transaksional ' +
         '(ucapan terima kasih dan kuitansi donasi) tetap dikirim.'
@@ -288,15 +402,16 @@
   }
 
   function jalankanMassal(aksi, nilai, tombol) {
-    P.sibuk(tombol, true, 'Menerapkan…');
-    P.panggil('crmMassal', { ids: Object.keys(terpilih), aksi: aksi, nilai: nilai })
-      .then(function (h) {
-        P.tutupModal();
-        P.toast(P.angka(h.diubah) + ' kontak diperbarui.', 'sukses');
-        terpilih = {};
-        return Promise.all([muatKpi(), muatDaftar()]);
-      })
-      .catch(function (e) { P.galat(e); P.sibuk(tombol, false); });
+    return P.denganSibuk(tombol, 'Menerapkan…', function () {
+      return P.panggil('crmMassal', { ids: Object.keys(terpilih), aksi: aksi, nilai: nilai });
+    }).then(function (h) {
+      P.tutupModal();
+      P.toast(h.dihapus !== undefined
+        ? P.angka(h.dihapus) + ' kontak dihapus.'
+        : P.angka(h.diubah) + ' kontak diperbarui.', 'sukses');
+      terpilih = {};
+      return Promise.all([muatKpi(), muatDaftar()]);
+    }).catch(P.galat);
   }
 
   function sinkron(tombol) {

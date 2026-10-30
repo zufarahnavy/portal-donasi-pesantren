@@ -316,8 +316,7 @@
     if (kurang) { kurang.focus(); UI.toast('Masih ada isian wajib yang kosong.', 'galat'); return; }
 
     var tombol = $('tombol-kirim');
-    tombol.disabled = true;
-    tombol.innerHTML = 'Menyimpan…';
+    UI.sibuk(tombol, true, 'Menyimpan…');
 
     API.post('submitDonation', {
       program: program.slug,
@@ -347,8 +346,7 @@
       gambarPembayaran(res.data);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }).catch(function (err) {
-      tombol.disabled = false;
-      tombol.innerHTML = UI.ikon('hati') + 'Lanjut ke Pembayaran';
+      UI.sibuk(tombol, false);
       UI.toast(err.message, 'galat', 7000);
     });
   }
@@ -575,8 +573,7 @@
   // ====================================================== Konfirmasi WhatsApp
   function konfirmasiWA() {
     var tombol = $('tombol-konfirmasi');
-    tombol.disabled = true;
-    tombol.innerHTML = 'Memproses…';
+    UI.sibuk(tombol, true, 'Memproses…');
 
     API.post('confirmWA', { id: donasi.id, kode: donasi.kode }).then(function (res) {
       if (res.data && res.data.wa_url) {
@@ -586,8 +583,7 @@
       location.href = 'terima-kasih.html?id=' + encodeURIComponent(donasi.id) +
         '&kode=' + encodeURIComponent(donasi.kode);
     }).catch(function (err) {
-      tombol.disabled = false;
-      tombol.innerHTML = UI.ikon('obrolan') + 'Konfirmasi via WhatsApp Sekarang';
+      UI.sibuk(tombol, false);
       UI.toast(err.message, 'galat', 7000);
     });
   }
